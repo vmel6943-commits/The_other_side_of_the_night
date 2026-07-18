@@ -1,11 +1,45 @@
 <script>
+	import { onMount } from "svelte";
 	import { asset } from "$lib/asset.js";
 
 	let { sections = [], brand = "[STORY BRAND]", brandImage = "" } = $props();
+	let activeId = $state(sections[0]?.id ?? "");
 
 	const scrollTo = (id) => {
+		activeId = id;
 		document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 	};
+
+	onMount(() => {
+		let frame;
+		const updateActive = () => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				const marker = Math.min(window.innerHeight * 0.34, 320);
+				let current = sections[0]?.id ?? "";
+
+				for (const section of sections) {
+					const element = document.getElementById(section.id);
+					if (!element) continue;
+					const rect = element.getBoundingClientRect();
+					if (rect.top <= marker) current = section.id;
+					if (rect.top <= marker && rect.bottom > marker) break;
+				}
+
+				activeId = current;
+			});
+		};
+
+		window.addEventListener("scroll", updateActive, { passive: true });
+		window.addEventListener("resize", updateActive);
+		updateActive();
+
+		return () => {
+			cancelAnimationFrame(frame);
+			window.removeEventListener("scroll", updateActive);
+			window.removeEventListener("resize", updateActive);
+		};
+	});
 </script>
 
 <header class="story-nav" aria-label="Story navigation">
@@ -18,7 +52,11 @@
 	</button>
 	<nav>
 		{#each sections as section}
-			<button onclick={() => scrollTo(section.id)}>
+			<button
+				class:active={activeId === section.id}
+				aria-current={activeId === section.id ? "step" : undefined}
+				onclick={() => scrollTo(section.id)}
+			>
 				<span class="num">{section.num}</span>
 				<span>{section.kicker}</span>
 			</button>
@@ -114,6 +152,21 @@
 	nav button:hover {
 		opacity: 1;
 		transform: translateY(-1px);
+	}
+
+	nav button.active {
+		opacity: 1;
+		transform: translateY(-1px);
+		text-shadow: 0 2px 10px rgba(79, 34, 91, 0.38);
+	}
+
+	nav button.active .num {
+		background: #f2fafe;
+		color: #f9458e;
+		border-color: #f2fafe;
+		box-shadow:
+			0 0 0 3px rgba(242, 250, 254, 0.2),
+			3px 4px 0 rgba(85, 35, 88, 0.2);
 	}
 
 	.num {

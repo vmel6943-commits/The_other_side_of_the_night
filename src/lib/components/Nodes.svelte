@@ -5,6 +5,7 @@
 	import ImageStack from "$components/ImageStack.svelte";
 	import ChartBlock from "$components/ChartBlock.svelte";
 	import PropCard from "$components/PropCard.svelte";
+	import ConclusionBlock from "$components/ConclusionBlock.svelte";
 
 	let { sectionId, nodes = [] } = $props();
 	let svgEl;
@@ -16,7 +17,8 @@
 		Image: ImageBlock,
 		Images: ImageStack,
 		Chart: ChartBlock,
-		Card: PropCard
+		Card: PropCard,
+		Conclusion: ConclusionBlock
 	};
 
 	const registerNode = (id, el) => {

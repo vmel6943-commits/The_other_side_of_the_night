@@ -1,7 +1,16 @@
+@font-face {
+	font-family: "Smiley Sans";
+	src: url("/assets/fonts/SmileySans-Oblique.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
 :root {
-	--font-sans: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", "Source Han Sans SC", system-ui,
+	--font-sans: "Noto Sans SC Variable", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui,
 		-apple-system, BlinkMacSystemFont, sans-serif;
-	--font-display: Impact, Haettenschweiler, "Arial Black", var(--font-sans);
+	--font-display: "Noto Sans SC Variable", "Noto Sans SC", "Arial Black", var(--font-sans);
+	--font-accent: "Smiley Sans", var(--font-display);
 	--font-serif: Georgia, "Times New Roman", serif;
 	--color-ink: #181716;
 	--color-muted: #5e5a53;

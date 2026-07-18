@@ -3,6 +3,7 @@
 	import { asset } from "$lib/asset.js";
 
 	let { section } = $props();
+	const hasLongTitle = section.title.length >= 12;
 
 	const themeStyle = `
 		--background: ${section.theme.background};
@@ -35,7 +36,7 @@
 	</div>
 
 	<div class="intro">
-		<h2>{section.title}</h2>
+		<h2 class:long-title={hasLongTitle}>{section.title}</h2>
 		<p>{section.dek}</p>
 	</div>
 
@@ -46,7 +47,7 @@
 	.chapter {
 		position: relative;
 		isolation: isolate;
-		padding: clamp(4rem, 8vw, 6rem) clamp(1rem, 4vw, 3rem);
+		padding: clamp(3.25rem, 6vw, 4.75rem) clamp(1rem, 4vw, 3rem);
 		border-bottom: 0;
 		background: linear-gradient(to bottom, var(--background));
 		color: var(--text-color);
@@ -151,7 +152,7 @@
 		background: var(--text-bg);
 		box-shadow: var(--box-shadow);
 		color: var(--text-color);
-		font-family: var(--font-display);
+		font-family: var(--font-accent);
 		font-size: clamp(2.6rem, 7vw, 6rem);
 		line-height: 1;
 	}
@@ -201,13 +202,19 @@
 	h2 {
 		max-width: 920px;
 		margin: 0 auto;
-		font-family: var(--font-display);
+		font-family: var(--font-accent);
 		font-size: clamp(3rem, 9vw, 6.5rem);
 		line-height: 0.98;
 		letter-spacing: 0;
 		color: var(--heading-color);
 		text-shadow: var(--heading-shadow);
 		text-transform: uppercase;
+		text-wrap: balance;
+	}
+
+	h2.long-title {
+		font-size: clamp(2.8rem, 6vw, 4.35rem);
+		line-height: 1.02;
 	}
 
 	.intro p {

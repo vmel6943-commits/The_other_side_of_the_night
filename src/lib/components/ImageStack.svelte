@@ -21,6 +21,9 @@
 					{:else}
 						<span>{image.label}</span>
 					{/if}
+					{#if image.city}
+						<span class="stack-city-label">{image.city}</span>
+					{/if}
 				</div>
 				{#if image.caption}
 					<figcaption>{image.caption}</figcaption>
@@ -50,6 +53,7 @@
 	}
 
 	.stack-frame {
+		position: relative;
 		aspect-ratio: 4 / 3;
 		display: grid;
 		place-items: center;
@@ -74,6 +78,39 @@
 		height: 100%;
 		object-fit: cover;
 		object-position: center center;
+	}
+
+	.stack-city-label {
+		position: absolute;
+		left: 0.7rem;
+		bottom: 0.7rem;
+		z-index: 2;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.38rem;
+		padding: 0.38rem 0.68rem;
+		border: 1px solid rgba(220, 214, 255, 0.74);
+		border-radius: 6px;
+		background: linear-gradient(135deg, rgba(17, 25, 62, 0.9), rgba(73, 52, 116, 0.8));
+		box-shadow: 0 7px 18px rgba(4, 8, 30, 0.34);
+		backdrop-filter: blur(8px);
+		color: #fff;
+		font-size: 0.84rem;
+		font-weight: 900;
+		line-height: 1;
+		letter-spacing: 0.05em;
+		text-transform: none;
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.42);
+	}
+
+	.stack-city-label::before {
+		content: "";
+		width: 0.42rem;
+		aspect-ratio: 1;
+		border-radius: 50%;
+		background: #f3ee65;
+		box-shadow: 0 0 9px rgba(243, 238, 101, 0.8);
+		flex: 0 0 auto;
 	}
 
 	figure:nth-child(2) .stack-frame {

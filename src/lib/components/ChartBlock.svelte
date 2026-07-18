@@ -10,15 +10,18 @@
 		confidence = "",
 		source = "",
 		note = "",
-		risk = "",
 		bars = [],
 		columns = [],
 		legend = [],
 		layers = [],
+		spaceMetrics = [],
+		impactMetrics = [],
+		spotlights = [],
 		aSide = [],
 		bSide = [],
 		calculated = [],
 		beijingALens = null,
+		chainTitle = "三种夜晚，三种守护方式",
 		chainColumns = [],
 		guardChains = [],
 		points = [],
@@ -29,6 +32,7 @@
 		contentTypes = [],
 		growthBars = [],
 		beyondTheater = [],
+		beyondTitle = "剧场之外的夜内容",
 		sourceNote = "",
 		beijingDensity = null,
 		nightContentFormats = null,
@@ -44,6 +48,7 @@
 		timeNote = "",
 		mapNote = "",
 		axes = null,
+		batchSummary = [],
 		cities = []
 	} = $props();
 
@@ -64,6 +69,8 @@
 	let serviceRouteHasHover = $state(false);
 	let activeServiceCard = $state("");
 	let activeServiceInterval = $state("");
+	let activeMatrixCityName = $state("");
+	let activeLiangmaTopic = $state("");
 	let visible = $state(false);
 
 	const confidenceLabels = {
@@ -108,7 +115,7 @@
 	const perDayLine = $derived(
 		beijing2024 ? "北京每天约 156 场 / 3.5 万观众 / 1068 万元票房" : "日均换算待补充"
 	);
-	const cityLegend = $derived(cities.map((city) => `${city.city}${city.clusterCount}`));
+	const cityLegend = $derived(cities.map((city) => city.city));
 	const activeRiverCity = $derived(cities[activeRiverIndex] ?? cities[0]);
 	const activeGuardChain = $derived(guardChains[activeGuardIndex] ?? guardChains[0]);
 	const activePerformancePoint = $derived(points.find((point) => point.id === activePerformanceId) ?? points[0]);
@@ -116,6 +123,8 @@
 	const contentTypesMax = $derived(maxValue(contentTypes));
 	const growthBarsMax = $derived(maxValue(growthBars));
 	const beyondTheaterMax = $derived(maxValue(beyondTheater));
+	const impactMetricsMax = $derived(maxValue(impactMetrics));
+	const impactMetricsScaleMax = $derived(Math.max(80, impactMetricsMax));
 	const activeServiceRouteData = $derived(routes.find((route) => route.slug === activeServiceRoute) ?? null);
 	const defaultServiceRouteSummary = "夜班公交把长安街、环路与居住区接回城市。";
 	const routeDrawOrder = $derived(
@@ -129,6 +138,7 @@
 			1
 		)
 	);
+	const activeMatrixCity = $derived(cities.find((city) => city.city === activeMatrixCityName) ?? null);
 
 	onMount(() => {
 		registerNode(nodeId, el);
@@ -194,20 +204,39 @@
 		return `--x: ${x}%; --y: ${y}%;`;
 	}
 
-	function cityStyle(city) {
-		const size = Math.max(48, Math.min(86, 32 + Number(city.clusterCount ?? 0) * 3.2));
+	function cityStyle(city, index = 0) {
+		const size = Number(city.clusterCount) > 0
+			? Math.max(48, Math.min(86, 32 + Number(city.clusterCount) * 3.2))
+			: 60;
 		const labelOffsets = new Map([
-			["\u5317\u4eac", ["58px", "-18px"]],
-			["\u4e0a\u6d77", ["-56px", "4px"]],
-			["\u91cd\u5e86", ["-86px", "-4px"]],
-			["\u676d\u5dde", ["58px", "2px"]],
-			["\u6210\u90fd", ["42px", "0px"]],
-			["\u957f\u6c99", ["0px", "-82px"]],
-			["\u6df1\u5733", ["48px", "-26px"]],
-			["\u897f\u5b89", ["76px", "-34px"]]
+			["\u5317\u4eac", ["54px", "-14px"]],
+			["\u4e0a\u6d77", ["-50px", "2px"]],
+			["\u91cd\u5e86", ["-48px", "-8px"]],
+			["\u676d\u5dde", ["50px", "0px"]],
+			["\u6210\u90fd", ["38px", "-2px"]],
+			["\u957f\u6c99", ["-18px", "10px"]],
+			["\u6df1\u5733", ["44px", "-22px"]],
+			["\u897f\u5b89", ["92px", "4px"]]
 		]);
 		const [labelX = "0px", labelY = "14px"] = labelOffsets.get(city.city) ?? [];
-		return `--x: ${city.x}%; --y: ${city.y}%; --size: ${size}px; --label-x: ${labelX}; --label-y: ${labelY};`;
+		const adjustedY = 24 + Number(city.y ?? 50) * 0.66;
+		return `--x: ${city.x}%; --y: ${adjustedY}%; --size: ${size}px; --label-x: ${labelX}; --label-y: ${labelY}; --city-delay: ${index * 75}ms;`;
+	}
+
+	function setActiveMatrixCity(cityName) {
+		activeMatrixCityName = cityName;
+	}
+
+	function clearActiveMatrixCity() {
+		activeMatrixCityName = "";
+	}
+
+	function setActiveLiangmaTopic(topic) {
+		activeLiangmaTopic = topic ?? "";
+	}
+
+	function clearActiveLiangmaTopic() {
+		activeLiangmaTopic = "";
 	}
 	function riverBarStyle(value, cityIndex, columnIndex) {
 		const index = Math.max(0, Math.min(100, Number(value?.index ?? 0)));
@@ -216,9 +245,9 @@
 
 	function riverStatusLabel(status) {
 		return {
-			hard: "硬数据",
-			partial: "部分可比",
-			context: "情境指标"
+			hard: "可核查数值",
+			partial: "阶段 / 历史",
+			context: "类型证据"
 		}[status ?? "context"];
 	}
 
@@ -358,7 +387,88 @@
 	</header>
 
 	<div class={`chart-canvas ${chartType || "bars-canvas"}`}>
-		{#if chartType === "riverGroupedBars"}
+		{#if chartType === "liangmaheMetrics"}
+			<div class:has-topic={activeLiangmaTopic} class="liangma-metrics-stage visual-stage" aria-label={title}>
+				<div class="liangma-system-grid">
+					<section class="liangma-space-panel">
+						<div class="liangma-subhead">
+							<span>01 / 空间骨架</span>
+							<strong>一条河先被重新连起来</strong>
+						</div>
+						<div class="liangma-space-grid">
+							{#each spaceMetrics as item, i}
+								<button
+									type="button"
+									class="liangma-space-card"
+									class:is-related={activeLiangmaTopic === item.topic}
+									class:is-dimmed={Boolean(activeLiangmaTopic) && activeLiangmaTopic !== item.topic}
+									data-topic={item.topic}
+									style={`--i: ${i};`}
+									onmouseenter={() => setActiveLiangmaTopic(item.topic)}
+									onmouseleave={clearActiveLiangmaTopic}
+									onfocus={() => setActiveLiangmaTopic(item.topic)}
+									onclick={() => setActiveLiangmaTopic(item.topic)}
+									onblur={clearActiveLiangmaTopic}
+								>
+									<strong>{item.value}<small>{item.unit}</small></strong>
+									<span>{item.label}</span>
+									<p>{item.detail}</p>
+								</button>
+							{/each}
+						</div>
+					</section>
+
+					<section class="liangma-impact-panel">
+						<div class="liangma-subhead">
+							<span>02 / 治理后变化 · 统一尺度 0%—80%</span>
+							<strong>公共空间把人流与商业带回岸边</strong>
+						</div>
+						<div class="liangma-impact-bars">
+							{#each impactMetrics as item}
+								<button
+									type="button"
+									class="liangma-impact-row"
+									class:is-related={activeLiangmaTopic === item.topic}
+									class:is-dimmed={Boolean(activeLiangmaTopic) && activeLiangmaTopic !== item.topic}
+									data-topic={item.topic}
+									onmouseenter={() => setActiveLiangmaTopic(item.topic)}
+									onmouseleave={clearActiveLiangmaTopic}
+									onfocus={() => setActiveLiangmaTopic(item.topic)}
+									onclick={() => setActiveLiangmaTopic(item.topic)}
+									onblur={clearActiveLiangmaTopic}
+								>
+									<div><span>{item.label}</span><small>{item.period}</small></div>
+									<i><i style={widthStyle(item.value, impactMetricsScaleMax)}></i></i>
+									<strong>{item.displayValue}</strong>
+								</button>
+							{/each}
+						</div>
+						<p class="liangma-impact-note">每条数据都在左侧标出观察期；条长只比较增幅，不比较客流、销售额与收入的绝对量。</p>
+					</section>
+				</div>
+
+				<div class="liangma-spotlights" aria-label="亮马河年度节点数据">
+					{#each spotlights as item}
+						<button
+							type="button"
+							class="liangma-spotlight"
+							class:is-related={activeLiangmaTopic === item.topic}
+							class:is-dimmed={Boolean(activeLiangmaTopic) && activeLiangmaTopic !== item.topic}
+							data-topic={item.topic}
+							onmouseenter={() => setActiveLiangmaTopic(item.topic)}
+							onmouseleave={clearActiveLiangmaTopic}
+							onfocus={() => setActiveLiangmaTopic(item.topic)}
+							onclick={() => setActiveLiangmaTopic(item.topic)}
+							onblur={clearActiveLiangmaTopic}
+						>
+							<strong>{item.value}</strong>
+							<span>{item.label}</span>
+							<small>{item.note}</small>
+						</button>
+					{/each}
+				</div>
+			</div>
+		{:else if chartType === "riverGroupedBars"}
 			<div
 				class={`river-bars-stage visual-stage ${riverHasHover ? "river-bars-has-hover" : ""}`}
 				aria-label={title}
@@ -518,7 +628,7 @@
 				<section class="guard-chain-section">
 					<div class="guard-section-title compact">
 						<p>B SIDE CHAIN</p>
-						<h4>三种夜晚，三种守护方式</h4>
+						<h4>{chainTitle}</h4>
 					</div>
 
 					<div class="guard-chain-layout">
@@ -771,7 +881,7 @@
 
 						{#if beyondTheater.length}
 							<section class="mini-chart-card beyond-card">
-								<h4>剧场之外的夜内容</h4>
+								<h4>{beyondTitle}</h4>
 								<div class="mini-bar-list compact two-col-bars">
 									{#each beyondTheater as item}
 										<div class="mini-bar-row" title={`${item.label} ${item.value}${item.unit ?? ""}`}>
@@ -1063,21 +1173,23 @@
 								{/each}
 							</div>
 						</section>
-						<section class="coverage-card">
-							<h4>{"\u591c\u4eac\u57ce\u8986\u76d6"}</h4>
-							{#each nightDistrictCoverage as group}
-								<div class="coverage-group">
-									<p>{group.area}</p>
-									{#each group.items as item}
-										<div class="coverage-row">
-											<span>{item.label}</span>
-											<i style={widthStyle(item.value, maxCoverageValue)}></i>
-											<strong>{item.display ?? `${item.value}${item.unit}`}</strong>
-										</div>
-									{/each}
-								</div>
-							{/each}
-						</section>
+						{#if nightDistrictCoverage.length}
+							<section class="coverage-card">
+								<h4>{"\u591c\u4eac\u57ce\u8986\u76d6"}</h4>
+								{#each nightDistrictCoverage as group}
+									<div class="coverage-group">
+										<p>{group.area}</p>
+										{#each group.items as item}
+											<div class="coverage-row">
+												<span>{item.label}</span>
+												<i style={widthStyle(item.value, maxCoverageValue)}></i>
+												<strong>{item.display ?? `${item.value}${item.unit}`}</strong>
+											</div>
+										{/each}
+									</div>
+								{/each}
+							</section>
+						{/if}
 						<section class="route-detail-card">
 							{#if activeServiceRouteData}
 								<p>{activeServiceRouteData.id} / {activeServiceRouteData.name}</p>
@@ -1116,20 +1228,49 @@
 			</div>
 		{:else if chartType === "cityMatrix"}
 			<div class="axis-stage visual-stage" aria-label={title}>
+				{#if batchSummary.length}
+					<div class="matrix-summary" aria-label="三批国家级夜间文化和旅游消费集聚区数量">
+						{#each batchSummary as item}
+							<div class:total={item.label.includes("合计")}>
+								<span>{item.year ? `${item.year}年` : ""}{item.label}</span>
+								<strong>{item.value}<small>个</small></strong>
+							</div>
+						{/each}
+					</div>
+				{/if}
 				<div class="axis-line x"></div>
 				<div class="axis-line y"></div>
-				<div class="axis-label x-left">{axes?.x?.[0]}</div>
-				<div class="axis-label x-right">{axes?.x?.[1]}</div>
-				<div class="axis-label y-top">{axes?.y?.[1]}</div>
-				<div class="axis-label y-bottom">{axes?.y?.[0]}</div>
-				{#each cities as city}
-					<div class="bubble-point" style={cityStyle(city)}>
-						<i>{city.clusterCount}</i>
+				<div class="axis-label axis-label-x x-left">← {axes?.x?.[0]}</div>
+				<div class="axis-label axis-label-x x-right">{axes?.x?.[1]} →</div>
+				<div class="axis-label axis-label-y y-top">↑ {axes?.y?.[1]}</div>
+				<div class="axis-label axis-label-y y-bottom">{axes?.y?.[0]} ↓</div>
+				{#each cities as city, cityIndex}
+					<button
+						type="button"
+						class="bubble-point"
+						class:is-active={activeMatrixCityName === city.city}
+						class:is-muted={activeMatrixCityName && activeMatrixCityName !== city.city}
+						style={cityStyle(city, cityIndex)}
+						onmouseenter={() => setActiveMatrixCity(city.city)}
+						onmouseleave={clearActiveMatrixCity}
+						onfocus={() => setActiveMatrixCity(city.city)}
+						onclick={() => setActiveMatrixCity(city.city)}
+						onblur={clearActiveMatrixCity}
+						aria-label={`${city.city}三批累计${city.clusterCount}个集聚区`}
+					>
+						<i>{city.clusterCount ?? city.shortName ?? city.index}</i>
 						<span>{city.city}</span>
 						<small>{city.type}</small>
-					</div>
+					</button>
 				{/each}
-				<p class="matrix-legend">{cityLegend.join(" / ")}</p>
+				<p class="matrix-legend">
+					{#if activeMatrixCity}
+						<strong>{activeMatrixCity.city} {activeMatrixCity.clusterCount} 个</strong>
+						<span>第一批 {activeMatrixCity.batches?.[0] ?? 0} / 第二批 {activeMatrixCity.batches?.[1] ?? 0} / 第三批 {activeMatrixCity.batches?.[2] ?? 0}</span>
+					{:else}
+						圆内数字与圆点大小 = 三批国家级夜间文旅消费集聚区累计数量；悬浮城市可查看分批构成，坐标位置为编辑归纳。
+					{/if}
+				</p>
 			</div>
 		{:else}
 			<div class="bars" aria-label={title}>
@@ -1145,16 +1286,13 @@
 		{/if}
 	</div>
 
-	{#if source || note || risk}
+	{#if source || note}
 		<footer class="chart-footnotes">
 			{#if source}
 				<p><strong>来源</strong><span>{source}</span></p>
 			{/if}
 			{#if note}
 				<p><strong>说明</strong><span>{note}</span></p>
-			{/if}
-			{#if risk}
-				<p><strong>口径风险</strong><span>{risk}</span></p>
 			{/if}
 		</footer>
 	{/if}
@@ -1246,6 +1384,305 @@
 			radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.18) 0 8%, transparent 9%),
 			radial-gradient(circle at 84% 72%, rgba(255, 255, 255, 0.16) 0 10%, transparent 11%);
 		overflow: hidden;
+	}
+
+	.liangma-metrics-stage {
+		display: grid;
+		gap: clamp(0.75rem, 1.5vw, 1rem);
+		min-height: 0;
+		padding: clamp(0.75rem, 1.5vw, 1rem);
+		background:
+			radial-gradient(circle at 18% 34%, color-mix(in srgb, var(--line-stroke) 20%, transparent), transparent 34%),
+			linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035));
+	}
+
+	.liangma-system-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+		gap: clamp(0.85rem, 1.7vw, 1.25rem);
+		align-items: stretch;
+	}
+
+	.liangma-space-panel,
+	.liangma-impact-panel {
+		position: relative;
+		display: grid;
+		gap: 0.6rem;
+		min-width: 0;
+		padding: clamp(0.85rem, 1.6vw, 1.15rem);
+		border-radius: calc(var(--radius) * 0.65);
+		background: rgba(255, 255, 255, 0.09);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 12%, transparent);
+	}
+
+	.liangma-space-panel {
+		overflow: hidden;
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--line-stroke) 15%, transparent), transparent 58%),
+			rgba(255, 255, 255, 0.075);
+	}
+
+	.liangma-subhead {
+		position: relative;
+		z-index: 2;
+		display: grid;
+		gap: 0.12rem;
+	}
+
+	.liangma-subhead span {
+		font-size: 0.68rem;
+		font-weight: 950;
+		opacity: 0.62;
+		text-transform: uppercase;
+	}
+
+	.liangma-subhead strong {
+		font-family: var(--font-display);
+		font-size: clamp(1rem, 1.55vw, 1.28rem);
+		line-height: 1.08;
+	}
+
+	.liangma-space-grid {
+		position: relative;
+		z-index: 2;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-auto-rows: 1fr;
+		gap: 0.65rem;
+	}
+
+	.liangma-space-card,
+	.liangma-impact-row,
+	.liangma-spotlight {
+		border: 0;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.liangma-space-card {
+		display: grid;
+		grid-template-rows: auto auto 1fr;
+		align-content: stretch;
+		gap: 0.18rem;
+		min-height: 96px;
+		padding: 0.62rem 0.68rem;
+		border-radius: 12px;
+		background: color-mix(in srgb, var(--text-bg) 72%, transparent);
+		box-shadow: 3px 4px 0 color-mix(in srgb, currentColor 12%, transparent);
+		transform: translateY(0);
+		transition: opacity 220ms ease, transform 220ms ease, background 220ms ease, box-shadow 220ms ease;
+	}
+
+	.liangma-space-card > strong {
+		font-family: var(--font-accent);
+		font-size: clamp(1.55rem, 2.65vw, 2.25rem);
+		font-weight: 400;
+		line-height: 0.9;
+		white-space: nowrap;
+	}
+
+	.liangma-space-card > strong small {
+		margin-left: 0.2rem;
+		font-family: var(--font-sans);
+		font-size: 0.64rem;
+		font-weight: 900;
+	}
+
+	.liangma-space-card > span {
+		font-size: 0.78rem;
+		font-weight: 950;
+	}
+
+	.liangma-space-card p {
+		font-size: 0.66rem;
+		font-weight: 700;
+		line-height: 1.35;
+		opacity: 0.7;
+	}
+
+	.liangma-impact-panel {
+		grid-template-rows: auto minmax(0, 1fr) auto;
+		align-content: start;
+		background:
+			linear-gradient(155deg, rgba(255, 169, 255, 0.13), transparent 62%),
+			rgba(255, 255, 255, 0.065);
+	}
+
+	.liangma-impact-bars {
+		display: grid;
+		grid-template-rows: repeat(6, minmax(0, 1fr));
+		gap: 0.35rem;
+		align-content: center;
+	}
+
+	.liangma-impact-row {
+		display: grid;
+		grid-template-columns: minmax(6.5rem, 0.85fr) minmax(90px, 1fr) auto;
+		gap: 0.55rem;
+		align-items: center;
+		width: 100%;
+		min-height: 48px;
+		padding: 0.16rem 0;
+		background: transparent;
+	}
+
+	.liangma-impact-row > div {
+		display: grid;
+		gap: 0.05rem;
+	}
+
+	.liangma-impact-row span {
+		font-size: 0.73rem;
+		font-weight: 950;
+		line-height: 1.2;
+	}
+
+	.liangma-impact-row small {
+		font-size: 0.58rem;
+		font-weight: 800;
+		opacity: 0.58;
+	}
+
+	.liangma-impact-row > i {
+		display: block;
+		height: 14px;
+		border-radius: 4px;
+		background: color-mix(in srgb, currentColor 10%, transparent);
+		overflow: hidden;
+	}
+
+	.liangma-impact-row > i > i {
+		display: block;
+		width: var(--w);
+		height: 100%;
+		border-radius: inherit;
+		background: linear-gradient(90deg, var(--line-stroke), rgba(255, 169, 255, 0.92));
+	}
+
+	.liangma-impact-row > strong {
+		min-width: 4.35rem;
+		font-family: var(--font-accent);
+		font-size: clamp(1.15rem, 1.8vw, 1.55rem);
+		font-weight: 400;
+		line-height: 1;
+		text-align: right;
+	}
+
+	.liangma-impact-note {
+		padding-top: 0.48rem;
+		border-top: 1px dashed color-mix(in srgb, currentColor 24%, transparent);
+		font-size: 0.66rem;
+		font-weight: 750;
+		line-height: 1.45;
+		opacity: 0.68;
+	}
+
+	.liangma-spotlights {
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		grid-auto-rows: 1fr;
+		gap: 0.65rem;
+	}
+
+	.liangma-spotlight {
+		display: grid;
+		grid-template-rows: 1.65rem minmax(2.2rem, auto) 1rem;
+		gap: 0.12rem;
+		align-content: stretch;
+		min-width: 0;
+		min-height: 80px;
+		padding: 0.55rem 0.75rem;
+		border-radius: 10px;
+		background: color-mix(in srgb, var(--text-bg) 62%, transparent);
+		transition: opacity 220ms ease, transform 220ms ease, background 220ms ease, box-shadow 220ms ease;
+	}
+
+	.liangma-spotlight strong {
+		font-family: var(--font-display);
+		font-size: clamp(1.05rem, 1.65vw, 1.35rem);
+		white-space: nowrap;
+	}
+
+	.liangma-spotlight span {
+		font-size: 0.68rem;
+		font-weight: 900;
+		line-height: 1.2;
+	}
+
+	.liangma-spotlight small {
+		font-size: 0.6rem;
+		font-weight: 850;
+		opacity: 0.62;
+		line-height: 1.25;
+	}
+
+	.liangma-space-card,
+	.liangma-spotlight {
+		opacity: 0;
+	}
+
+	.chart-shell.is-visible .liangma-space-card {
+		animation: liangma-card-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+		animation-delay: calc(var(--i) * 65ms);
+	}
+
+	.chart-shell.is-visible .liangma-spotlight {
+		animation: liangma-card-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.chart-shell.is-visible .liangma-spotlight:nth-child(2) { animation-delay: 70ms; }
+	.chart-shell.is-visible .liangma-spotlight:nth-child(3) { animation-delay: 140ms; }
+	.chart-shell.is-visible .liangma-spotlight:nth-child(4) { animation-delay: 210ms; }
+	.chart-shell.is-visible .liangma-spotlight:nth-child(5) { animation-delay: 280ms; }
+
+	.liangma-impact-row > i > i {
+		transform: scaleX(0);
+		transform-origin: left center;
+		transition: transform 820ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease;
+	}
+
+	.chart-shell.is-visible .liangma-impact-row > i > i { transform: scaleX(1); }
+
+	.liangma-metrics-stage .is-dimmed {
+		opacity: 0.22 !important;
+		filter: saturate(0.55);
+	}
+
+	.liangma-metrics-stage .is-related {
+		opacity: 1 !important;
+		box-shadow:
+			0 0 0 2px color-mix(in srgb, var(--line-stroke) 66%, transparent),
+			4px 5px 0 color-mix(in srgb, currentColor 13%, transparent);
+	}
+
+	.liangma-space-card:hover,
+	.liangma-space-card:focus-visible,
+	.liangma-spotlight:hover,
+	.liangma-spotlight:focus-visible {
+		transform: translateY(-3px);
+		background: color-mix(in srgb, var(--text-bg) 86%, var(--line-stroke) 14%);
+	}
+
+	.liangma-impact-row { transition: opacity 220ms ease, transform 220ms ease; }
+	.liangma-impact-row:hover { transform: translateX(3px); }
+	.liangma-impact-row:hover > i > i { filter: brightness(1.16) saturate(1.14); }
+	.liangma-space-card:focus-visible,
+	.liangma-impact-row:focus-visible,
+	.liangma-spotlight:focus-visible { outline: 2px dashed currentColor; outline-offset: 3px; }
+
+	@keyframes liangma-card-in {
+		from { opacity: 0; transform: translateY(18px) scale(0.98); }
+		to { opacity: 1; transform: translateY(0) scale(1); }
+	}
+
+	.chart-shell.liangmaheMetrics h3 {
+		font-size: clamp(1.65rem, 3.3vw, 2.35rem);
+	}
+
+	.chart-shell.liangmaheMetrics .dek {
+		font-size: clamp(15px, 0.95vw, 17px);
 	}
 
 	.river-bars-stage {
@@ -3991,7 +4428,7 @@
 
 	.service-data-panel {
 		display: grid;
-		grid-template-rows: auto auto;
+		grid-template-rows: minmax(0, 1fr) auto;
 		gap: clamp(0.55rem, 0.9vw, 0.75rem);
 		padding: 0;
 		align-content: start;
@@ -4103,13 +4540,16 @@
 
 	.support-services-card {
 		display: grid;
+		grid-template-rows: auto minmax(0, 1fr);
 		gap: 0.4rem;
 		align-content: start;
+		height: 100%;
 	}
 
 	.support-services-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: repeat(3, minmax(0, 1fr));
 		gap: 0.32rem;
 	}
 
@@ -4117,7 +4557,7 @@
 		display: grid;
 		gap: 0.1rem;
 		align-content: center;
-		min-height: 64px;
+		min-height: 72px;
 		padding: 0.42rem 0.48rem;
 		border: 1px solid rgba(255, 255, 255, 0.075);
 		border-radius: 9px;
@@ -4276,12 +4716,59 @@
 	}
 
 	.axis-stage {
-		min-height: 560px;
-		padding: 1.8rem 2rem 4.4rem;
+		min-height: 610px;
+		padding: 7rem 2rem 4rem;
 		background:
 			radial-gradient(circle at 30% 68%, rgba(204, 255, 237, 0.28), transparent 22%),
 			radial-gradient(circle at 72% 34%, rgba(255, 169, 255, 0.16), transparent 24%),
 			rgba(242, 250, 254, 0.42);
+	}
+
+	.matrix-summary {
+		position: absolute;
+		left: 1rem;
+		right: 1rem;
+		top: 0.9rem;
+		z-index: 6;
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0.55rem;
+	}
+
+	.matrix-summary div {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		min-width: 0;
+		padding: 0.65rem 0.8rem;
+		border: 1px solid rgba(38, 38, 38, 0.18);
+		border-radius: 10px;
+		background: rgba(255, 255, 255, 0.72);
+	}
+
+	.matrix-summary div.total {
+		background: linear-gradient(120deg, rgba(204, 255, 237, 0.92), rgba(255, 169, 255, 0.42));
+	}
+
+	.matrix-summary span {
+		font-size: 0.74rem;
+		font-weight: 850;
+		line-height: 1.2;
+	}
+
+	.matrix-summary strong {
+		font-family: var(--font-accent);
+		font-size: clamp(1.55rem, 2.6vw, 2.2rem);
+		font-weight: 400;
+		line-height: 1;
+	}
+
+	.matrix-summary small {
+		margin-left: 0.12rem;
+		font-family: var(--font-sans);
+		font-size: 0.68rem;
+		font-weight: 800;
 	}
 
 	.axis-line {
@@ -4293,12 +4780,12 @@
 	.axis-line.x {
 		left: 9%;
 		right: 9%;
-		top: 50%;
+		top: 59%;
 		height: 2px;
 	}
 
 	.axis-line.y {
-		top: 9%;
+		top: 25%;
 		bottom: 14%;
 		left: 50%;
 		width: 2px;
@@ -4307,21 +4794,55 @@
 	.axis-label {
 		position: absolute;
 		z-index: 4;
-		padding: 0.34rem 0.62rem;
-		font-size: 0.86rem;
+		padding: 0.32rem 0.58rem;
+		border: 1px dashed color-mix(in srgb, currentColor 52%, transparent);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--line-stroke) 28%, rgba(255, 255, 255, 0.78));
+		box-shadow: none;
+		font-size: 0.92rem;
 		font-weight: 900;
+		letter-spacing: 0.035em;
 	}
 
-	.x-left { left: 1.3rem; top: 51%; }
-	.x-right { right: 1.3rem; top: 51%; }
-	.y-top { left: 51%; top: 1.25rem; }
-	.y-bottom { left: 51%; bottom: 4.55rem; }
+	.x-left { left: 1.3rem; top: 60%; }
+	.x-right { right: 1.3rem; top: 60%; }
+
+	.axis-label-y {
+		padding: 0.26rem 0.48rem;
+		border-color: color-mix(in srgb, currentColor 34%, transparent);
+		background: rgba(255, 255, 255, 0.68);
+		font-size: 0.84rem;
+		letter-spacing: 0.02em;
+		line-height: 1.1;
+		white-space: nowrap;
+	}
+
+	.y-top {
+		left: 50%;
+		top: calc(25% - 0.55rem);
+		transform: translate(-50%, -100%);
+	}
+
+	.y-bottom {
+		left: 50%;
+		right: auto;
+		top: calc(86% + 0.55rem);
+		bottom: auto;
+		transform: translateX(-50%);
+	}
 
 	.bubble-point {
 		display: block;
 		width: var(--size);
 		height: var(--size);
-		pointer-events: none;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+		pointer-events: auto;
+		transition: opacity 220ms ease, filter 220ms ease;
 	}
 
 	.bubble-point i {
@@ -4342,7 +4863,31 @@
 			5px 6px 0 rgba(0, 0, 0, 0.18),
 			0 0 20px rgba(204, 255, 237, 0.28),
 			inset 0 0 0 4px rgba(255, 255, 255, 0.35);
+		transition: transform 220ms ease, box-shadow 220ms ease;
 	}
+
+	.chart-shell.is-visible .bubble-point i {
+		animation: matrix-bubble-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+		animation-delay: var(--city-delay);
+	}
+
+	@keyframes matrix-bubble-in {
+		from { opacity: 0; filter: blur(4px); }
+		to { opacity: 1; filter: blur(0); }
+	}
+
+	.bubble-point.is-muted { opacity: 0.42; filter: saturate(0.72); }
+	.bubble-point.is-active i,
+	.bubble-point:hover i,
+	.bubble-point:focus-visible i {
+		transform: scale(1.08);
+		box-shadow:
+			7px 8px 0 rgba(0, 0, 0, 0.16),
+			0 0 28px rgba(204, 255, 237, 0.5),
+			inset 0 0 0 4px rgba(255, 255, 255, 0.5);
+	}
+
+	.bubble-point:focus-visible { outline: 2px dashed currentColor; outline-offset: 7px; }
 
 	.bubble-point span {
 		position: absolute;
@@ -4353,7 +4898,7 @@
 		border-radius: 999px;
 		background: rgba(255, 255, 255, 0.92);
 		border: 1px solid rgba(38, 38, 38, 0.18);
-		font-size: 0.95rem;
+		font-size: 1.03rem;
 		font-weight: 900;
 		line-height: 1.05;
 		white-space: nowrap;
@@ -4367,12 +4912,12 @@
 		top: calc(50% + var(--size) / 2 + 34px);
 		z-index: 2;
 		width: max-content;
-		max-width: 150px;
+		max-width: 165px;
 		padding: 0.08rem 0.3rem;
 		border-radius: 8px;
 		background: rgba(239, 249, 252, 0.84);
-		font-size: 0.68rem;
-		line-height: 1.18;
+		font-size: 0.77rem;
+		line-height: 1.22;
 		text-align: center;
 		white-space: normal;
 		word-break: keep-all;
@@ -4388,14 +4933,17 @@
 		bottom: 0.95rem;
 		max-width: none;
 		text-align: center;
-		padding: 0.34rem 0.7rem;
-		border: 1px solid rgba(38, 38, 38, 0.16);
+		padding: 0.28rem 0.7rem;
+		border: 0;
 		border-radius: 16px;
-		background: rgba(255, 255, 255, 0.72);
+		background: rgba(255, 255, 255, 0.54);
 		font-size: 0.78rem;
 		line-height: 1.35;
 		z-index: 3;
 	}
+
+	.matrix-legend strong { margin-right: 0.6rem; font-size: 0.9rem; }
+	.matrix-legend span { font-weight: 750; }
 
 	.bars {
 		display: grid;
@@ -4470,6 +5018,22 @@
 	}
 
 	@media (max-width: 880px) {
+		.liangma-system-grid { grid-template-columns: 1fr; }
+		.liangma-spotlights { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+		.matrix-summary {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.axis-stage {
+			min-height: 680px;
+			padding-top: 10.5rem;
+		}
+
+		.y-top {
+			top: 9.8rem;
+		}
+
 		.stage-compare,
 		.dot-matrix-stage,
 		.river-bars-layout {
@@ -4549,6 +5113,10 @@
 	}
 
 	@media (max-width: 560px) {
+		.liangma-space-grid,
+		.liangma-spotlights { grid-template-columns: 1fr; }
+		.liangma-impact-row { grid-template-columns: minmax(6rem, 0.8fr) minmax(72px, 1fr) auto; }
+
 		.chart-shell {
 			padding: 1rem;
 		}
@@ -4729,6 +5297,10 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.liangma-space-card,
+		.liangma-spotlight { opacity: 1; animation: none !important; transform: none !important; }
+		.liangma-impact-row > i > i { transform: scaleX(1); transition: none; }
+		.bubble-point i { animation: none !important; }
 		.data-dot,
 		.mini-cloud i {
 			animation: none;

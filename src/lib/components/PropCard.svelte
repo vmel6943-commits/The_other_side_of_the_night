@@ -92,7 +92,7 @@
 	}
 
 	h3 {
-		font-family: var(--font-display);
+		font-family: var(--font-accent);
 		font-size: 1.6rem;
 		line-height: 1.1;
 		text-transform: uppercase;

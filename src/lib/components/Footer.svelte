@@ -5,10 +5,10 @@
 <footer>
 	<div class="footer-inner">
 		<p class="credits">{footer.credits}</p>
-		{#if footer.lab || footer.members || footer.email}
+		{#if footer.instructor || footer.members || footer.email}
 			<div class="lab-card">
-				{#if footer.lab}
-					<strong>{footer.lab}</strong>
+				{#if footer.instructor}
+					<strong>指导教师：{footer.instructor}</strong>
 				{/if}
 				{#if footer.members}
 					<span>成员：{footer.members}</span>
