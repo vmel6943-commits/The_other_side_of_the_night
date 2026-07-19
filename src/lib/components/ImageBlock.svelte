@@ -9,6 +9,11 @@
 		alt = "[IMAGE ALT PLACEHOLDER]",
 		caption = "",
 		shape = "rectangle",
+		fit = "cover",
+		position = "center center",
+		source = "",
+		sourceUrl = "",
+		credit = "",
 		overlays = []
 	} = $props();
 	const { registerNode } = getContext("nodeRegistry");
@@ -22,7 +27,7 @@
 <figure id={nodeId} class={`image-block ${shape}`} bind:this={el}>
 	<div class="image-frame" role="img" aria-label={alt}>
 		{#if src}
-			<img src={asset(src)} {alt} loading="lazy" />
+			<img src={asset(src)} {alt} loading="lazy" style={`object-fit: ${fit}; object-position: ${position};`} />
 		{:else}
 			<span>{label}</span>
 		{/if}
@@ -35,8 +40,16 @@
 			</span>
 		{/each}
 	</div>
-	{#if caption}
-		<figcaption>{caption}</figcaption>
+	{#if caption || source || credit}
+		<figcaption>
+			{#if caption}<span>{caption}</span>{/if}
+			{#if source || credit}
+				<small>
+					{#if source}图片：{#if sourceUrl}<a href={sourceUrl} target="_blank" rel="noreferrer">{source}</a>{:else}{source}{/if}{/if}
+					{#if credit}{source ? " · " : ""}{credit}{/if}
+				</small>
+			{/if}
+		</figcaption>
 	{/if}
 </figure>
 
@@ -71,7 +84,7 @@
 	.image-frame img {
 		width: 100%;
 		height: 100%;
-		object-fit: contain;
+		object-fit: cover;
 		object-position: center center;
 	}
 
@@ -118,14 +131,42 @@
 		border-radius: 999px;
 	}
 
+	.image-block.portrait {
+		width: min(100%, 470px);
+		transform: rotate(1.5deg);
+	}
+
+	.image-block.portrait .image-frame {
+		aspect-ratio: 4 / 5;
+		max-height: min(68vh, 620px);
+	}
+
 	figcaption {
 		margin: 0.55rem auto 0;
 		max-width: min(100%, var(--measure));
-		color: var(--text-color);
+		padding: 0.48rem 0.7rem;
+		border: 1px solid color-mix(in srgb, var(--panel-border) 38%, transparent);
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--panel-bg) 88%, transparent);
+		color: var(--panel-text);
 		font-size: 0.78rem;
 		line-height: 1.45;
-		opacity: 0.78;
+		opacity: 0.9;
 		text-align: center;
+		backdrop-filter: blur(6px);
+	}
+
+	figcaption span,
+	figcaption small { display: block; }
+
+	figcaption small {
+		margin-top: 0.22rem;
+		font-size: 0.7rem;
+	}
+
+	figcaption a {
+		color: inherit;
+		text-underline-offset: 0.16em;
 	}
 
 	@media (max-width: 640px) {

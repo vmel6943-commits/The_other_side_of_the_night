@@ -54,6 +54,7 @@
 <style>
 	.hero {
 		min-height: 100vh;
+		overflow-x: clip;
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: clamp(1rem, 2vw, 1.7rem);
@@ -433,6 +434,18 @@
 			width: min(74%, 360px);
 			padding: 0.75rem;
 			font-size: 0.88rem;
+		}
+
+		.narrator.is-left {
+			left: -0.3rem;
+			--tx: 0;
+			--ty: 48%;
+		}
+
+		.narrator.is-right {
+			right: -0.3rem;
+			--tx: 0;
+			--ty: -48%;
 		}
 
 		.hero-image {

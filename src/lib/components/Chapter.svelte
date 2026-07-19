@@ -15,6 +15,11 @@
 		--border: ${section.theme.border};
 		--box-shadow: ${section.theme.boxShadow};
 		--card-bg: ${section.theme.cardBg};
+		--panel-bg: ${section.theme.panelBg};
+		--panel-text: ${section.theme.panelText};
+		--panel-accent: ${section.theme.panelAccent};
+		--panel-accent-2: ${section.theme.panelAccent2};
+		--panel-border: ${section.theme.panelBorder};
 	`;
 </script>
 
@@ -22,11 +27,22 @@
 	<div class="cover">
 		<div class="cover-image" role="img" aria-label={section.cover.alt}>
 			{#if section.cover?.src}
-				<img src={asset(section.cover.src)} alt={section.cover.alt} loading="lazy" />
+				<img
+					src={asset(section.cover.src)}
+					alt={section.cover.alt}
+					loading="lazy"
+					style={`object-position: ${section.cover.position ?? "center center"};`}
+				/>
 			{:else}
 				<span>{section.cover.label}</span>
 			{/if}
 		</div>
+		{#if section.cover?.source || section.cover?.credit}
+			<p class="cover-credit">
+				{#if section.cover.source}图片：{#if section.cover.sourceUrl}<a href={section.cover.sourceUrl} target="_blank" rel="noreferrer">{section.cover.source}</a>{:else}{section.cover.source}{/if}{/if}
+				{#if section.cover.credit}{section.cover.source ? " · " : ""}{section.cover.credit}{/if}
+			</p>
+		{/if}
 		<div class="num-badge" aria-hidden="true">
 			<span>{section.num}</span>
 			<i></i>
@@ -47,6 +63,7 @@
 	.chapter {
 		position: relative;
 		isolation: isolate;
+		overflow-x: clip;
 		padding: clamp(3.25rem, 6vw, 4.75rem) clamp(1rem, 4vw, 3rem);
 		border-bottom: 0;
 		background: linear-gradient(to bottom, var(--background));
@@ -126,7 +143,7 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
-		object-fit: contain;
+		object-fit: cover;
 		object-position: center center;
 	}
 
@@ -194,6 +211,25 @@
 		text-transform: uppercase;
 	}
 
+	.cover-credit {
+		position: absolute;
+		right: 0.7rem;
+		bottom: 0.65rem;
+		z-index: 3;
+		max-width: calc(100% - 7rem);
+		margin: 0;
+		padding: 0.26rem 0.48rem;
+		border-radius: 4px;
+		background: rgba(0, 0, 0, 0.62);
+		color: #fff;
+		font-size: 0.66rem;
+		line-height: 1.35;
+		text-align: right;
+		text-shadow: none;
+	}
+
+	.cover-credit a { color: inherit; text-underline-offset: 0.14em; }
+
 	.intro {
 		padding: 3rem 0 1rem;
 		text-align: center;
@@ -220,9 +256,16 @@
 	.intro p {
 		max-width: var(--measure);
 		margin: 1rem auto 0;
-		color: var(--text-color);
+		padding: 0.82rem 1rem;
+		border: 1px solid var(--panel-border);
+		border-radius: 12px;
+		background: var(--panel-bg);
+		box-shadow: 3px 3px 0 color-mix(in srgb, var(--panel-border) 24%, transparent);
+		color: var(--panel-text);
 		font-size: 1.1rem;
 		font-weight: 700;
+		text-wrap: pretty;
+		line-break: strict;
 	}
 
 	@media (max-width: 640px) {

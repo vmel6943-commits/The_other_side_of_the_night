@@ -162,7 +162,7 @@
 
 	nav button.active .num {
 		background: #f2fafe;
-		color: #f9458e;
+		color: #ad1f61;
 		border-color: #f2fafe;
 		box-shadow:
 			0 0 0 3px rgba(242, 250, 254, 0.2),

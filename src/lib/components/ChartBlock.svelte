@@ -5121,6 +5121,21 @@
 			padding: 1rem;
 		}
 
+		.chart-shell.servicePeopleNetwork h3 {
+			white-space: normal;
+		}
+
+		.chart-shell.servicePeopleNetwork .chart-head,
+		.chart-shell.servicePeopleNetwork .chart-canvas,
+		.chart-shell.servicePeopleNetwork .chart-footnotes,
+		.service-routes-stage,
+		.service-routes-layout,
+		.route-map-panel,
+		.service-data-panel {
+			width: 100%;
+			min-width: 0;
+		}
+
 		.visual-stage {
 			min-height: 460px;
 		}

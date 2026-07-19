@@ -9,6 +9,7 @@
 		variant = "body",
 		text = "[TEXT BLOCK PLACEHOLDER]",
 		align = "left",
+		slotSide = null,
 		isFirstSpeaker = false
 	} = $props();
 
@@ -17,6 +18,9 @@
 	let visible = $state(false);
 	const paragraphs = $derived(Array.isArray(text) ? text : [text]);
 	const variantClass = $derived(`variant-${variant || "body"}`);
+	const speakerClass = $derived(
+		speaker === "晚晚" ? "speaker-wanwan" : speaker === "小夏" ? "speaker-xia" : "speaker-editorial"
+	);
 
 	onMount(() => {
 		registerNode(nodeId, el);
@@ -24,7 +28,7 @@
 			([entry]) => {
 				if (entry.isIntersecting) visible = true;
 			},
-			{ threshold: 0.28 }
+			{ threshold: 0.08 }
 		);
 
 		observer.observe(el);
@@ -34,7 +38,7 @@
 
 <section
 	id={nodeId}
-	class={`text-block ${align} ${variantClass}`}
+	class={`text-block ${align} side-${slotSide ?? align} ${variantClass} ${speakerClass}`}
 	class:is-visible={visible}
 	bind:this={el}
 >
@@ -66,20 +70,32 @@
 		background: var(--text-bg);
 		box-shadow: var(--box-shadow);
 		color: var(--text-color);
-		opacity: 0;
+		opacity: 1;
 		transition:
 			opacity 600ms ease,
 			transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
+	.text-block.speaker-wanwan {
+		--speaker-accent: #a92c70;
+		border-color: var(--speaker-accent);
+		box-shadow: 5px 6px 0 color-mix(in srgb, var(--speaker-accent) 42%, transparent);
+	}
+
+	.text-block.speaker-xia {
+		--speaker-accent: #0b6b78;
+		border-color: var(--speaker-accent);
+		box-shadow: 5px 6px 0 color-mix(in srgb, var(--speaker-accent) 42%, transparent);
+	}
+
 	.text-block.right {
 		align-self: flex-end;
-		transform: translateX(36px);
+		transform: translateX(18px);
 	}
 
 	.text-block.left {
 		align-self: flex-start;
-		transform: translateX(-36px);
+		transform: translateX(-18px);
 	}
 
 	.text-block.center {
@@ -112,12 +128,21 @@
 		backdrop-filter: blur(10px);
 	}
 
-	.left .speaker {
-		left: 1rem;
+	.speaker-wanwan .speaker,
+	.speaker-xia .speaker {
+		border-color: var(--speaker-accent);
+		background: color-mix(in srgb, var(--text-bg) 86%, var(--speaker-accent) 14%);
+		color: var(--speaker-accent);
 	}
 
-	.right .speaker {
+	.side-left .speaker {
+		left: 1rem;
+		right: auto;
+	}
+
+	.side-right .speaker {
 		right: 1rem;
+		left: auto;
 	}
 
 	.center .speaker {
@@ -148,6 +173,16 @@
 		line-height: 1.62;
 		letter-spacing: 0.015em;
 		font-weight: 500;
+		text-wrap: pretty;
+		line-break: strict;
+	}
+
+	.variant-dialogue p,
+	.variant-quote p {
+		font-family: var(--font-display);
+		font-size: clamp(1.08rem, 1.65vw, 1.28rem);
+		font-weight: 760;
+		line-height: 1.52;
 	}
 
 	p + p {

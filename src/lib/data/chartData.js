@@ -231,8 +231,5 @@ const cityNightMatrix = {
 
 export const chartData = {
 	liangmaheSystem,
-	sanlitunComplexity,
-	performanceComparison,
-	nightServicePeople,
-	cityNightMatrix
+	nightServicePeople
 };

@@ -6,6 +6,20 @@
 	import ChartBlock from "$components/ChartBlock.svelte";
 	import PropCard from "$components/PropCard.svelte";
 	import ConclusionBlock from "$components/ConclusionBlock.svelte";
+	import EvidenceTimeline from "$components/EvidenceTimeline.svelte";
+	import DataPanel from "$components/DataPanel.svelte";
+	import InsightGrid from "$components/InsightGrid.svelte";
+	import RouteOverview from "$components/RouteOverview.svelte";
+	import GuideStops from "$components/GuideStops.svelte";
+	import NightClock from "$components/NightClock.svelte";
+	import HotspotBars from "$components/HotspotBars.svelte";
+	import StreetPressure from "$components/StreetPressure.svelte";
+	import ServiceRelay from "$components/ServiceRelay.svelte";
+	import PerformanceGrowth from "$components/PerformanceGrowth.svelte";
+	import SystemFlow from "$components/SystemFlow.svelte";
+	import NightSupplyTreemap from "$components/NightSupplyTreemap.svelte";
+	import NightSecurity from "$components/NightSecurity.svelte";
+	import NightPortrait from "$components/NightPortrait.svelte";
 
 	let { sectionId, nodes = [] } = $props();
 	let svgEl;
@@ -18,7 +32,27 @@
 		Images: ImageStack,
 		Chart: ChartBlock,
 		Card: PropCard,
-		Conclusion: ConclusionBlock
+		Conclusion: ConclusionBlock,
+		Timeline: EvidenceTimeline,
+		Data: DataPanel,
+		Insight: InsightGrid,
+		Routes: RouteOverview,
+		Guide: GuideStops,
+		Clock: NightClock,
+		Hotspots: HotspotBars,
+		Pressure: StreetPressure,
+		Relay: ServiceRelay,
+		Growth: PerformanceGrowth,
+		System: SystemFlow,
+		Supply: NightSupplyTreemap,
+		Security: NightSecurity,
+		NightPortrait
+	};
+
+	const avatarForSpeaker = (speaker) => {
+		if (speaker === "晚晚") return { src: "/assets/images/characters/wanwan-avatar.png", alt: "晚晚人物头像" };
+		if (speaker === "小夏") return { src: "/assets/images/characters/xia-avatar.png", alt: "小夏人物头像" };
+		return null;
 	};
 
 	const registerNode = (id, el) => {
@@ -113,22 +147,28 @@
 			{@const next = orderedIds[i + 1]}
 			{#if anchors[id] && anchors[next]}
 				<path d={curvedPath(anchors[id].bottom, anchors[next].top)} />
+				<path class="connector-main" d={curvedPath(anchors[id].bottom, anchors[next].top)} />
+				<circle cx={anchors[next].top.x} cy={anchors[next].top.y} r="4" />
 			{/if}
 		{/each}
 	</svg>
 
 	{#each nodes as node, i}
 		{@const Component = components[node.type]}
+		{@const resolvedSpeaker = node.speaker ?? node.value?.speaker}
 		{@const nodeProps = {
 			...(node.value ?? {}),
-			speaker: node.speaker ?? node.value?.speaker,
-			speakerAvatar: node.speakerAvatar ?? node.value?.speakerAvatar,
+			speaker: resolvedSpeaker,
+			speakerAvatar: node.speakerAvatar ?? node.value?.speakerAvatar ?? avatarForSpeaker(resolvedSpeaker),
 			variant: node.variant ?? node.value?.variant,
 			align: node.align ?? node.value?.align,
+			slotSide: i % 2 === 0 ? "left" : "right",
 			isFirstSpeaker: node.isFirstSpeaker ?? node.value?.isFirstSpeaker
 		}}
 		{#if Component}
-			<Component sectionId={sectionId} nodeId={`${sectionId}-${i}`} {...nodeProps} />
+			<div class={`node-slot ${i % 2 === 0 ? "slot-left" : "slot-right"} type-${node.type.toLowerCase()}`}>
+				<Component sectionId={sectionId} nodeId={`${sectionId}-${i}`} {...nodeProps} />
+			</div>
 		{/if}
 	{/each}
 </div>
@@ -143,6 +183,39 @@
 		position: relative;
 	}
 
+	.node-slot {
+		position: relative;
+		z-index: 3;
+		display: flex;
+		width: 100%;
+	}
+
+	.slot-left {
+		justify-content: flex-start;
+		padding-right: clamp(0rem, 6vw, 4rem);
+	}
+
+	.slot-right {
+		justify-content: flex-end;
+		padding-left: clamp(0rem, 6vw, 4rem);
+	}
+
+	.type-chart,
+	.type-hotspots,
+	.type-pressure,
+	.type-relay,
+	.type-growth,
+	.type-system,
+	.type-supply,
+	.type-security,
+	.type-nightportrait,
+	.type-clock,
+	.type-routes,
+	.type-conclusion {
+		padding-inline: 0;
+		justify-content: center;
+	}
+
 	svg {
 		position: absolute;
 		inset: 0;
@@ -155,10 +228,26 @@
 
 	path {
 		fill: none;
-		stroke: var(--line-stroke);
-		stroke-width: 2;
+		stroke: rgba(38, 38, 38, 0.7);
+		stroke-width: 5;
 		stroke-linecap: round;
 		stroke-dasharray: 8 8;
-		opacity: 0.58;
+		opacity: 0.22;
+	}
+
+	path.connector-main {
+		stroke: var(--line-stroke);
+		stroke-width: 2;
+		opacity: 0.82;
+	}
+
+	circle {
+		fill: var(--line-stroke);
+		stroke: rgba(38, 38, 38, 0.78);
+		stroke-width: 1.5;
+	}
+
+	@media (max-width: 720px) {
+		.node-slot { padding-inline: 0; justify-content: center; }
 	}
 </style>
