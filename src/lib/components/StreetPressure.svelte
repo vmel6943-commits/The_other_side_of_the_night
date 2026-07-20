@@ -3,16 +3,31 @@
 
 	let { nodeId, eyebrow = "街巷承载", title = "", lead = "", days = [], facts = [], visitorFacts = [], sources = [], source = "", sourceUrl = "", contextSource = "", contextSourceUrl = "", note = "" } = $props();
 	const { registerNode } = getContext("nodeRegistry");
+	let visible = $state(false);
 	let el;
-	onMount(() => registerNode(nodeId, el));
+	onMount(() => {
+		registerNode(nodeId, el);
+		if (typeof IntersectionObserver === "undefined") {
+			visible = true;
+			return;
+		}
+		const observer = new IntersectionObserver(([entry]) => {
+			if (entry.isIntersecting) {
+				visible = true;
+				observer.disconnect();
+			}
+		}, { threshold: 0.18 });
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
 </script>
 
-<section id={nodeId} class="street-pressure" bind:this={el}>
+<section id={nodeId} class="street-pressure" class:visible bind:this={el}>
 	<header><p class="eyebrow">{eyebrow}</p><h3>{title}</h3>{#if lead}<p class="lead">{lead}</p>{/if}</header>
 
 	<div class="street-stage">
 		<div class="street-facts" aria-label="南锣鼓巷空间尺度">
-			{#each facts as fact}<div><strong>{fact.value}</strong><span>{fact.label}</span></div>{/each}
+			{#each facts as fact, index}<div style={`--fact-delay:${index * 85}ms`}><strong>{fact.value}</strong><span>{fact.label}</span></div>{/each}
 		</div>
 		<div class="street-strip" aria-hidden="true"><span>南口</span><i></i><b>主街空间</b><i></i><span>北口</span></div>
 
@@ -27,6 +42,7 @@
 							<button
 								type="button"
 								class="visitor-dot"
+								style={`--dot-delay:${120 + Math.min(dayIndex * 9 + index, 24) * 34}ms`}
 								aria-label={`${day.label}第 ${index + 1} 个万人次单元；${day.display}；${visitorFact?.title ?? day.density} ${visitorFact?.value ?? ""}`}
 							>
 								<span class="dot-tip">
@@ -61,7 +77,8 @@
 	.lead { max-width:700px; margin-top:.7rem; font-size:.96rem; line-height:1.58; text-wrap:pretty; opacity:.82; }
 	.street-stage { margin-top:1.45rem; padding:1rem; border:1.5px solid color-mix(in srgb,var(--panel-border) 58%,transparent); border-radius:calc(var(--radius)*.82); background:color-mix(in srgb,var(--panel-bg) 90%,var(--panel-text) 10%); }
 	.street-facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-block:1px solid color-mix(in srgb,var(--panel-border) 45%,transparent); }
-	.street-facts div { padding:.8rem; text-align:center; }
+	.street-facts div { padding:.8rem; text-align:center; opacity:0; transform:translateY(.4rem); transition:opacity 400ms ease var(--fact-delay),transform 520ms cubic-bezier(.22,1,.36,1) var(--fact-delay); }
+	.visible .street-facts div { opacity:1; transform:none; }
 	.street-facts div + div { border-left:1px solid color-mix(in srgb,var(--panel-border) 45%,transparent); }
 	.street-facts strong { display:block; font-family:var(--font-accent); font-size:clamp(1.25rem,3vw,1.8rem); line-height:1; }
 	.street-facts span { display:block; margin-top:.35rem; font-size:.69rem; font-weight:800; opacity:.72; }
@@ -77,7 +94,8 @@
 	.dot-label span { font-size:.62rem; opacity:.58; }
 	.dot-label b { margin-top:.22rem; font-family:var(--font-accent); font-size:.86rem; }
 	.dots { display:grid; grid-template-columns:repeat(9,minmax(14px,1fr)); gap:.42rem; }
-	.visitor-dot { position:relative; width:100%; max-width:1.65rem; aspect-ratio:1; padding:0; border:1.5px solid var(--panel-border); border-radius:50%; background:var(--panel-accent-2); box-shadow:2px 2px 0 color-mix(in srgb,var(--panel-border) 24%,transparent); cursor:help; transition:transform 140ms ease,box-shadow 140ms ease; }
+	.visitor-dot { position:relative; width:100%; max-width:1.65rem; aspect-ratio:1; padding:0; border:1.5px solid var(--panel-border); border-radius:50%; background:var(--panel-accent-2); box-shadow:2px 2px 0 color-mix(in srgb,var(--panel-border) 24%,transparent); cursor:help; opacity:0; transform:translateY(.5rem) scale(.55); transition:opacity 360ms ease var(--dot-delay),transform 520ms cubic-bezier(.22,1,.36,1) var(--dot-delay),box-shadow 140ms ease; }
+	.visible .visitor-dot { opacity:1; transform:none; }
 	.dot-row.holiday .visitor-dot { background:var(--panel-accent); }
 	.visitor-dot:hover,.visitor-dot:focus-visible { z-index:20; transform:translateY(-3px) scale(1.12); box-shadow:3px 5px 0 color-mix(in srgb,var(--panel-border) 30%,transparent); outline:2px solid var(--panel-text); outline-offset:2px; }
 	.dot-tip { position:absolute; left:50%; bottom:calc(100% + .6rem); display:none; width:14rem; padding:.7rem .75rem; border:1.5px solid var(--panel-border); border-radius:8px; background:var(--panel-bg); box-shadow:4px 4px 0 color-mix(in srgb,var(--panel-border) 28%,transparent); color:var(--panel-text); text-align:left; transform:translateX(-50%); pointer-events:none; }
@@ -103,5 +121,8 @@
 		.visitor-dot:nth-child(9n+1) .dot-tip::after,.visitor-dot:nth-child(9n+2) .dot-tip::after,.visitor-dot:nth-child(9n+3) .dot-tip::after{left:1.1rem}
 		.visitor-dot:nth-child(9n+7) .dot-tip,.visitor-dot:nth-child(9n+8) .dot-tip,.visitor-dot:nth-child(9n+9) .dot-tip{right:0;left:auto;transform:none}
 		.visitor-dot:nth-child(9n+7) .dot-tip::after,.visitor-dot:nth-child(9n+8) .dot-tip::after,.visitor-dot:nth-child(9n+9) .dot-tip::after{right:.75rem;left:auto}
+	}
+	@media(prefers-reduced-motion:reduce){
+		.street-facts div,.visitor-dot{opacity:1;transform:none;transition:none!important}
 	}
 </style>

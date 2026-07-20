@@ -6,8 +6,7 @@ import {
 } from "./guideData.js";
 import {
 	nightPortrait,
-	holidayHotspots,
-	nightSupply,
+	nightSupplyMap,
 	nanluoPressure,
 	shichahaiRelay,
 	performanceGrowth,
@@ -205,8 +204,7 @@ export const story = {
 					}
 				},
 				{ type: "NightPortrait", value: nightPortrait },
-				{ type: "Hotspots", value: holidayHotspots },
-				{ type: "Supply", value: nightSupply },
+				{ type: "Hotspots", value: nightSupplyMap },
 				{ type: "Routes", value: { routes: routeOverview, lead: "三条路径分别进入旧城、水岸街区与演出散场：旧城关乎空间承载，现代街区关乎更新与治理，文化现场则连接内容供给和深夜归途。" } },
 				{
 					type: "Clock",
@@ -474,7 +472,7 @@ export const story = {
 	methodology: null,
 	footer: {
 		credits: "数据新闻作品《夜晚的另一面》",
-		instructor: "刘莹华",
-		members: "马雨秋 · 曹馨熔 · 赵珺涵 · 胡咏伊"
+		instructor: "刘英华",
+		members: "曹馨熠 · 马雨秋 · 赵珂涵 · 胡咏仪"
 	}
 };

@@ -1,3 +1,5 @@
+import { nightPointCoordinates } from "./nightPointCoordinates.js";
+
 export const nightPortrait = {
 	eyebrow: "北京居民夜间消费 / 官方调查基线",
 	title: "从 18:00 到次日 6:00，北京人怎样使用夜晚",
@@ -41,27 +43,109 @@ export const nightPortrait = {
 	note: "2019 年调查为 3058 名北京居民样本，多选题比例可相加超过 100%；2024 年增幅为假期银联商务监测信号，两者不直接比较绝对量。"
 };
 
-export const holidayHotspots = {
-	eyebrow: "2025 年春节 8 天 / 北京内部",
-	title: "游客流向哪里，夜晚就从哪里继续生长",
-	lead: "王府井、天安门、前门等传统目的地仍占据最大客流，亮马河与南锣鼓巷也进入全市热门景区（地区）前十。旧城与新水岸，已经同时出现在北京旅行版图上。",
-	max: 239,
+const pointsFromBuckets = (tier, district, buckets) => Object.entries(buckets).flatMap(([subtype, names]) =>
+	names.map((name) => ({ tier, district, subtype, name, tags: [subtype] }))
+);
+
+const landmarkPoints = [
+	["东城区", "前门大街", ["夜食", "夜购"]], ["东城区", "隆福寺文化街区", ["夜食", "夜游"]], ["东城区", "王府井", ["夜购", "夜游"]],
+	["西城区", "天桥演艺区", ["夜游", "夜动"]], ["西城区", "什刹海—地外", ["夜游", "夜食"]], ["海淀区", "五棵松", ["夜动", "夜购"]],
+	["石景山区", "首钢园", ["夜动", "夜游"]], ["通州区", "北京（通州）大运河文化旅游景区", ["夜游", "夜动"]], ["通州区", "北京环球城市大道", ["夜食", "夜购", "夜动"]],
+	["朝阳区", "新工体—三里屯太古里", ["夜购", "夜动", "夜食"]], ["朝阳区", "蓝色港湾—亮马河国际风情水岸", ["夜游", "夜食", "夜购"]], ["朝阳区", "798—751艺术街区", ["夜动", "夜购"]],
+	["朝阳区", "北京奥林匹克中心区", ["夜动", "夜游"]], ["朝阳区", "北京CBD商圈", ["夜购", "夜食"]], ["朝阳区", "北京欢乐谷", ["夜动", "夜游"]], ["朝阳区", "朝阳大悦城", ["夜食", "夜购"]],
+	["昌平区", "乐多港假日广场", ["夜食", "夜动"]], ["怀柔区", "雁栖湖旅游风景区", ["夜游"]], ["怀柔区", "慕田峪长城", ["夜游"]],
+	["平谷区", "梨树沟休闲谷", ["夜游", "夜动"]], ["密云区", "密云古北水镇国际旅游度假区", ["夜游"]], ["延庆区", "八达岭长城", ["夜游"]]
+].map(([district, name, tags]) => ({ tier: "landmark", district, name, tags, subtype: tags[0] }));
+
+const checkinPoints = [
+	...pointsFromBuckets("checkin", "东城区", { 餐饮美食: ["簋街", "五道营胡同"], 旅游景区: ["天坛公园", "龙潭中湖公园"] }),
+	...pointsFromBuckets("checkin", "西城区", { 餐饮美食: ["华威约饭街"], 旅游景区: ["陶然亭公园", "北海公园"] }),
+	...pointsFromBuckets("checkin", "丰台区", { 餐饮美食: ["万丰路餐饮街"], 旅游景区: ["北京园博园", "南宫旅游景区", "世界公园"], 融合消费: ["花乡奥莱村", "丽泽天街", "槐房万达广场"], 主题市集: ["北京花卉大观园“花街夜市”"] }),
+	...pointsFromBuckets("checkin", "朝阳区", { 餐饮美食: ["霄云美食街", "朝阳合生汇·21街区", "半淘买生活广场餐饮街区", "月色码头餐饮街区", "好运街"], 旅游景区: ["红领巾公园", "温榆河公园"], 融合消费: ["中骏世界城商业街", "望京合生麒麟新天地商业街", "新辰里购物中心暨餐饮区", "长楹天街", "THE BOX朝外年轻力中心", "悠唐购物中心"], "特色园区/街区": ["酷车小镇", "北投奥园1314", "浩华文创园"], 主题市集: ["潘家园旧货市场"] }),
+	...pointsFromBuckets("checkin", "海淀区", { 餐饮美食: ["海淀悦界主题街区", "北京牡丹园特色商业街"], 融合消费: ["西三旗万象汇"], 旅游景区: ["中央广播电视塔"], "特色园区/街区": ["中关村壹号商业广场", "龙徽1910文化创新产业园", "北京卫星制造科技园区"] }),
+	...pointsFromBuckets("checkin", "石景山区", { 餐饮美食: ["台湾街", "喜隆多购物中心餐饮区"], 融合消费: ["京西大悦城"], "特色园区/街区": ["模式口历史文化街"] }),
+	...pointsFromBuckets("checkin", "门头沟区", { "特色园区/街区": ["檀谷"] }),
+	...pointsFromBuckets("checkin", "房山区", { 餐饮美食: ["一站一街·中关村大街"], 融合消费: ["龙湖北京房山天街", "北京首创奥特莱斯"], "特色园区/街区": ["北京莱恩堡酒庄"], 主题市集: ["滨水森林公园东北门广场"] }),
+	...pointsFromBuckets("checkin", "通州区", { 融合消费: ["通州万达广场"], "特色园区/街区": ["月亮河艺术小镇", "1988国际体育小镇", "东郎文创产业园", "环球12街区"] }),
+	...pointsFromBuckets("checkin", "顺义区", { 餐饮美食: ["中粮祥云小镇商业街"] }),
+	...pointsFromBuckets("checkin", "昌平区", { 餐饮美食: ["龙域购物中心西区商业街"] }),
+	...pointsFromBuckets("checkin", "大兴区", { 餐饮美食: ["龙湖天街餐饮区"], 融合消费: ["荟聚"], 主题市集: ["兴观夜市"] }),
+	...pointsFromBuckets("checkin", "怀柔区", { 融合消费: ["怀柔青春万达广场"], "特色园区/街区": ["顶秀美泉小镇—雁栖不夜谷", "科学城创新小街"] }),
+	...pointsFromBuckets("checkin", "平谷区", { "特色园区/街区": ["钧丝邦创意园"], 主题市集: ["星光市集"] }),
+	...pointsFromBuckets("checkin", "密云区", { 融合消费: ["密云万象汇"] }),
+	...pointsFromBuckets("checkin", "延庆区", { 旅游景区: ["北京世园国际旅游度假区", "妫河夜画"], 融合消费: ["延庆万达广场"], "特色园区/街区": ["延庆环长城文化创意产业园", "永宁古城北街"] }),
+	...pointsFromBuckets("checkin", "经开区", { 餐饮美食: ["赤花园创意产业美食餐饮街区"], 融合消费: ["大族广场购物中心", "龙湖北京亦庄天街"] })
+];
+
+const lifePoints = [
+	...pointsFromBuckets("life", "东城区", { 品质生活圈: ["安定门老北京平房胡同生活圈", "前永康生活圈", "崇外大街西区生活圈"] }),
+	...pointsFromBuckets("life", "朝阳区", { 品质生活圈: ["大羊坊便民生活圈", "万红路便民生活圈", "万科—拂林园便民生活圈", "林萃便民生活圈", "合生汇便民生活圈", "奥运村北便民生活圈"] }),
+	...pointsFromBuckets("life", "海淀区", { 品质生活圈: ["上地南区生活圈", "牡丹园—北极寺老城住宅生活圈"] }),
+	...pointsFromBuckets("life", "丰台区", { 品质生活圈: ["三环新城便民生活圈", "方庄时代life生活圈"] }),
+	...pointsFromBuckets("life", "门头沟区", { 品质生活圈: ["门头沟区龙湖生活圈"] }),
+	...pointsFromBuckets("life", "房山区", { 品质生活圈: ["华冠生活圈", "悦都苑社区生活圈", "龙湖天街生活圈"] }),
+	...pointsFromBuckets("life", "通州区", { 品质生活圈: ["领展生活圈", "通州贵友—淘乐城生活圈", "通州区西关生活圈"] }),
+	...pointsFromBuckets("life", "顺义区", { 品质生活圈: ["顺义区恒大街便民生活圈", "绿港—东兴便民生活圈", "建新—怡馨便民生活圈"] }),
+	...pointsFromBuckets("life", "大兴区", { 品质生活圈: ["首座御园—团河便民生活圈"] }),
+	...pointsFromBuckets("life", "怀柔区", { 品质生活圈: ["泉河迎宾路东生活圈", "商业街生活圈", "雁栖镇柏泉生活圈"] }),
+	...pointsFromBuckets("life", "平谷区", { 品质生活圈: ["兴谷光明生活圈", "国泰生活圈", "久润生活圈"] }),
+	...pointsFromBuckets("life", "密云区", { 品质生活圈: ["学府生活圈", "檀城社区生活圈", "万德福生活圈"] }),
+	...pointsFromBuckets("life", "延庆区", { 品质生活圈: ["新兴生活圈"] })
+];
+
+const coordinatesById = new Map(nightPointCoordinates.map((point) => [point.id, point]));
+const pointCatalogue = [...landmarkPoints, ...checkinPoints, ...lifePoints].map((point, index) => {
+	const id = `night-point-${index + 1}`;
+	return { ...point, id, ...coordinatesById.get(id) };
+});
+
+export const nightSupplyMap = {
+	eyebrow: "北京夜生活供给图谱 / 2024",
+	title: "129 个夜间点位，如何落在北京地图上",
+	lead: "这张图不再比较游客多少，而是把官方“夜京城”完整名单放回城市空间：每个圆点代表一个消费点位，颜色区分特色地标、打卡地与生活圈，筛选后可继续查看具体业态。",
+	total: 129,
+	overview: [
+		{ label: "特色消费地标", value: 22, detail: "夜游、夜食、夜购、夜动" },
+		{ label: "夜间消费打卡地", value: 73, detail: "覆盖五类特色业态" },
+		{ label: "品质消费生活圈", value: 34, detail: "连接社区与便民服务" }
+	],
+	sceneLegend: [
+		{ key: "tour", label: "夜游" },
+		{ key: "food", label: "夜食" },
+		{ key: "shop", label: "夜购" },
+		{ key: "move", label: "夜动" }
+	],
 	map: {
-		zoom: 12,
-		columns: [3371, 3372, 3373],
-		rows: [1551, 1552],
+		zoom: 8,
+		columns: [209, 210, 211],
+		rows: [96, 97],
 		attribution: "OpenStreetMap contributors"
 	},
-	items: [
-		{ label: "王府井", context: "传统商业街区", value: 239, display: "239 万人次", shortDisplay: "239 万", x: 53.2, y: 46.8 },
-		{ label: "天安门地区", context: "核心地标", value: 209.4, display: "209.4 万人次", shortDisplay: "209.4 万", x: 42.8, y: 51.2 },
-		{ label: "前门大街", context: "中轴商业空间", value: 126.8, display: "126.8 万人次", shortDisplay: "126.8 万", x: 45, y: 63 },
-		{ label: "亮马河水岸", context: "本篇水岸路径", value: 119.2, display: "119.2 万人次", shortDisplay: "119.2 万", x: 75, y: 21.6, focus: true },
-		{ label: "南锣鼓巷", context: "本篇旧城路径", value: 44.9, display: "44.9 万人次", shortDisplay: "44.9 万", x: 47.3, y: 29.8, focus: true }
+	tiers: [
+		{ key: "all", label: "全部", count: 129 },
+		{ key: "landmark", label: "特色地标", count: 22 },
+		{ key: "checkin", label: "打卡地", count: 73 },
+		{ key: "life", label: "生活圈", count: 34 }
 	],
-	source: "北京市文化和旅游局",
-	sourceUrl: "https://whlyj.beijing.gov.cn/zwgk/xwzx/gzdt/202502/t20250205_4003564.html",
-	note: "数据为 2025 年春节 8 天全日游客量，不是夜间客流；图中只选取与本文路径相关或用于提供量级参照的五个点位。"
+	tierFilters: {
+		landmark: ["夜游", "夜食", "夜购", "夜动"],
+		checkin: ["餐饮美食", "旅游景区", "融合消费", "特色园区/街区", "主题市集"]
+	},
+	catalogue: pointCatalogue,
+	featuredNames: ["什刹海—地外", "蓝色港湾—亮马河国际风情水岸", "新工体—三里屯太古里", "首钢园", "北京（通州）大运河文化旅游景区"],
+	items: [
+		{ label: "首钢园", type: "特色消费地标", scenes: ["tour", "move"], x: 24, y: 52, mobileX: 16, mobileY: 56, examples: "工业遗存夜游、体育运动与主题活动" },
+		{ label: "什刹海—地外", shortLabel: "什刹海", type: "特色消费地标", scenes: ["tour", "food"], x: 45, y: 43, mobileX: 36, mobileY: 35, examples: "湖面夜游、胡同漫步与沿岸餐饮", focus: true },
+		{ label: "前门大街", type: "特色消费地标", scenes: ["food", "shop"], x: 48, y: 61, mobileX: 39, mobileY: 69, examples: "中轴夜游动线、特色餐饮与夜间消费" },
+		{ label: "奥林匹克中心区", shortLabel: "奥林中心", type: "特色消费地标", scenes: ["tour", "move"], x: 50, y: 24, mobileX: 57, mobileY: 17, examples: "夜景游览、体育运动与主题表演" },
+		{ label: "亮马河水岸", type: "特色消费地标", scenes: ["tour", "food", "shop"], x: 62, y: 39, mobileX: 69, mobileY: 34, examples: "水岸夜游、餐饮休闲与商业消费", focus: true },
+		{ label: "新工体—三里屯", shortLabel: "工体—三里屯", type: "特色消费地标", scenes: ["food", "shop", "move"], x: 61, y: 53, mobileX: 61, mobileY: 58, examples: "夜间餐饮、艺术策展、商业活动与体育演出" },
+		{ label: "大运河景区", type: "特色消费地标", scenes: ["tour", "food", "move"], x: 77, y: 57, mobileX: 79, mobileY: 62, examples: "运河夜游、滨水消费与文化活动" },
+		{ label: "环球城市大道", shortLabel: "环球大道", type: "特色消费地标", scenes: ["food", "shop", "move"], x: 86, y: 68, mobileX: 88, mobileY: 84, examples: "餐饮、零售与主题娱乐延续至夜间" }
+	],
+	source: "北京市商务局《2024 年度“夜京城”地标、打卡地、生活圈》",
+	sourceUrl: "https://sw.beijing.gov.cn/zwxx/swxx/202408/t20240827_3783142.html",
+	note: "129 个点位由 22 个特色消费地标、73 个打卡地和 34 个生活圈构成。地图以 Web Mercator 投影统一计算底图与坐标；实心点对应可核验场所，范围环对应街区或生活圈中心，方框表示仅核验到城区层级的点位，不作为导航坐标。"
 };
 
 export const nightSupply = {

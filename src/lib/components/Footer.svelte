@@ -8,7 +8,7 @@
 		{#if footer.instructor || footer.members || footer.email}
 			<div class="lab-card">
 				{#if footer.instructor}
-					<strong>指导教师：{footer.instructor}</strong>
+					<span>指导老师：{footer.instructor}</span>
 				{/if}
 				{#if footer.members}
 					<span>成员：{footer.members}</span>
@@ -58,9 +58,10 @@
 		font-weight: 800;
 	}
 
-	.lab-card strong {
-		font-family: var(--font-display);
-		font-size: 1.15rem;
+	.lab-card span,
+	.lab-card a {
+		font-size: 0.84rem;
+		font-weight: 800;
 	}
 
 	a {

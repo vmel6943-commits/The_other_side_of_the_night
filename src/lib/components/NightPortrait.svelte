@@ -3,11 +3,26 @@
 
 	let { nodeId, eyebrow = "北京居民夜间消费", title = "", lead = "", year = "", sample = "", window: timeWindow = "", participation = null, times = [], activities = [], spending = [], transport = [], pulse = null, source = "", sourceUrl = "", pulseSource = "", pulseSourceUrl = "", note = "" } = $props();
 	const { registerNode } = getContext("nodeRegistry");
+	let visible = $state(false);
 	let el;
-	onMount(() => registerNode(nodeId, el));
+	onMount(() => {
+		registerNode(nodeId, el);
+		if (typeof IntersectionObserver === "undefined") {
+			visible = true;
+			return;
+		}
+		const observer = new IntersectionObserver(([entry]) => {
+			if (entry.isIntersecting) {
+				visible = true;
+				observer.disconnect();
+			}
+		}, { threshold: 0.18 });
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
 </script>
 
-<section id={nodeId} class="night-portrait" bind:this={el}>
+<section id={nodeId} class="night-portrait" class:visible bind:this={el}>
 	<header><p class="eyebrow">{eyebrow}</p><h3>{title}</h3>{#if lead}<p class="lead">{lead}</p>{/if}</header>
 
 	<div class="survey-meta"><span>{year} 年调查</span><span>{sample}</span><span>统计时段 {timeWindow}</span></div>
@@ -24,7 +39,7 @@
 			<div class="field-head"><p class="chart-label">夜间消费时段偏好 · 多选</p><span>占受访夜间消费者比例</span></div>
 			<div class="time-bars">
 				{#each times as item, index}
-					<div class={`time-row time-${index + 1}`}>
+					<div class={`time-row time-${index + 1}`} style={`--delay:${100 + index * 90}ms`}>
 						<div class="time-copy"><b>{item.label}</b><span>{item.detail}</span></div>
 						<div class="time-track"><i style={`--value:${item.value}%`}></i></div>
 						<strong>{item.value}%</strong>
@@ -38,7 +53,7 @@
 		<div class="field-head"><p class="chart-label">夜里去做什么 · 多选</p><span>按选择比例由高到低排列</span></div>
 		<div class="activity-bars">
 			{#each activities as item, index}
-				<div class={`activity-row activity-${index + 1}`}>
+				<div class={`activity-row activity-${index + 1}`} style={`--delay:${160 + index * 65}ms`}>
 					<span>{item.label}</span>
 					<i><b style={`--value:${item.value}%`}></b></i>
 					<strong>{item.value}%</strong>
@@ -51,13 +66,13 @@
 		<div class="spending">
 			<p class="chart-label">每人每次平均消费</p>
 			<div class="spending-ribbon" aria-label="夜间次均消费金额分布">
-				{#each spending as item, index}<i class={`spend-${index + 1}`} style={`--spend:${item.value}%`} title={`${item.label}：${item.value}%`}></i>{/each}
+				{#each spending as item, index}<i class={`spend-${index + 1}`} style={`--spend:${item.value}%;--delay:${180 + index * 70}ms`} title={`${item.label}：${item.value}%`}></i>{/each}
 			</div>
 			<div class="spending-labels">{#each spending as item}<span><b>{item.value}%</b>{item.label}</span>{/each}</div>
 		</div>
 		<div class="transport">
 			<p class="chart-label">夜间消费如何到达 · 多选</p>
-			<div>{#each transport as item}<span><b>{item.label}</b><i><em style={`--value:${item.value}%`}></em></i><strong>{item.value}%</strong></span>{/each}</div>
+			<div>{#each transport as item, index}<span style={`--delay:${180 + index * 55}ms`}><b>{item.label}</b><i><em style={`--value:${item.value}%`}></em></i><strong>{item.value}%</strong></span>{/each}</div>
 		</div>
 	</div>
 
@@ -91,7 +106,7 @@
 	.time-copy { display:grid; gap:.12rem; }
 	.time-copy b { font-size:.7rem; }
 	.time-copy span { font-size:.56rem; line-height:1.28; opacity:.62; }
-	.time-track { position:relative; height:.8rem; overflow:hidden; border:1px solid color-mix(in srgb,var(--panel-border) 42%,transparent); border-radius:999px; background:color-mix(in srgb,var(--panel-border) 8%,transparent); }
+	.time-track { position:relative; height:1.08rem; overflow:hidden; border:1px solid color-mix(in srgb,var(--panel-border) 42%,transparent); border-radius:999px; background:color-mix(in srgb,var(--panel-border) 8%,transparent); }
 	.time-track i { display:block; width:var(--value); height:100%; border-right:1px solid var(--panel-border); border-radius:999px; background:var(--panel-accent); }
 	.time-row:nth-child(2) .time-track i { background:var(--panel-accent-2); }
 	.time-row:nth-child(3) .time-track i { background:color-mix(in srgb,var(--panel-text) 46%,var(--panel-bg) 54%); }
@@ -102,13 +117,13 @@
 	.activity-bars { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.58rem 1rem; margin-top:.7rem; }
 	.activity-row { display:grid; grid-template-columns:7.6rem minmax(3rem,1fr) 2.8rem; align-items:center; gap:.5rem; }
 	.activity-row>span { overflow:hidden; font-size:.61rem; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
-	.activity-row>i { height:.55rem; overflow:hidden; border:1px solid color-mix(in srgb,var(--panel-border) 38%,transparent); border-radius:999px; background:color-mix(in srgb,var(--panel-border) 7%,transparent); }
+	.activity-row>i { height:.76rem; overflow:hidden; border:1px solid color-mix(in srgb,var(--panel-border) 38%,transparent); border-radius:999px; background:color-mix(in srgb,var(--panel-border) 7%,transparent); }
 	.activity-row>i b { display:block; width:var(--value); height:100%; border-right:1px solid var(--panel-border); border-radius:999px; background:var(--panel-accent-2); }
 	.activity-row:nth-child(odd)>i b { background:var(--panel-accent); }
 	.activity-row>strong { font-family:var(--font-accent); font-size:.76rem; text-align:right; }
 	.detail-row { display:grid; grid-template-columns:1.15fr .85fr; gap:.75rem; margin-top:.75rem; }
 	.spending,.transport { padding:.8rem; border:1px solid color-mix(in srgb,var(--panel-border) 34%,transparent); border-radius:10px; }
-	.spending-ribbon { display:flex; height:1rem; margin-top:.68rem; overflow:hidden; border:1px solid var(--panel-border); border-radius:999px; }
+	.spending-ribbon { display:flex; height:1.24rem; margin-top:.68rem; overflow:hidden; border:1px solid var(--panel-border); border-radius:999px; }
 	.spending-ribbon i { width:var(--spend); background:var(--panel-accent-2); }
 	.spending-ribbon i:nth-child(2) { background:var(--panel-accent); }
 	.spending-ribbon i:nth-child(3) { background:color-mix(in srgb,var(--panel-accent) 45%,var(--panel-accent-2) 55%); }
@@ -119,15 +134,22 @@
 	.transport>div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem .65rem; margin-top:.52rem; }
 	.transport span { display:grid; grid-template-columns:3.4rem minmax(2rem,1fr) 2.25rem; align-items:center; gap:.35rem; font-size:.52rem; }
 	.transport span>b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-	.transport span>i { height:.42rem; overflow:hidden; border-radius:999px; background:color-mix(in srgb,var(--panel-border) 10%,transparent); }
+	.transport span>i { height:.6rem; overflow:hidden; border-radius:999px; background:color-mix(in srgb,var(--panel-border) 10%,transparent); }
 	.transport span>i em { display:block; width:var(--value); height:100%; border-radius:999px; background:var(--panel-accent); }
 	.transport strong { font-family:var(--font-accent); font-size:.66rem; text-align:right; }
 	footer { display:grid; gap:.2rem; margin-top:.85rem; font-size:.68rem; line-height:1.48; opacity:.65; }
 	a { color:inherit; text-underline-offset:.16em; }
+	.participation-ring,.pulse { opacity:0; transform:translateY(.55rem) scale(.96); transition:opacity 560ms ease,transform 680ms cubic-bezier(.22,1,.36,1); }
+	.night-portrait.visible .participation-ring,.night-portrait.visible .pulse { opacity:1; transform:none; }
+	.time-track i,.activity-row>i b,.transport span>i em,.spending-ribbon i { transform:scaleX(0); transform-origin:left center; transition:transform 820ms cubic-bezier(.22,1,.36,1) var(--delay,0ms); }
+	.night-portrait.visible .time-track i,.night-portrait.visible .activity-row>i b,.night-portrait.visible .transport span>i em,.night-portrait.visible .spending-ribbon i { transform:scaleX(1); }
 	@media(max-width:680px){
 		.portrait-grid{grid-template-columns:1fr}.participation{grid-template-columns:1fr 1fr;align-items:center}.participation-ring{width:min(100%,10.5rem)}.pulse{align-self:stretch;flex-direction:column;align-items:flex-start;justify-content:center}.activity-bars{grid-template-columns:1fr}.detail-row{grid-template-columns:1fr}.survey-meta span{width:100%;border-left:0!important}.survey-meta span+span{border-top:1px solid color-mix(in srgb,var(--panel-border) 28%,transparent)}
 	}
 	@media(max-width:440px){
 		.time-row{grid-template-columns:7rem minmax(3rem,1fr) 2.8rem}.time-copy span{display:none}.activity-row{grid-template-columns:6.3rem minmax(2rem,1fr) 2.55rem}.spending-labels{grid-template-columns:repeat(2,minmax(0,1fr))}.transport>div{grid-template-columns:1fr}
+	}
+	@media(prefers-reduced-motion:reduce){
+		.participation-ring,.pulse,.time-track i,.activity-row>i b,.transport span>i em,.spending-ribbon i{opacity:1;transform:none!important;transition:none!important}
 	}
 </style>

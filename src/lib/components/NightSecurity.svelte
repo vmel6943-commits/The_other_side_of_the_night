@@ -23,11 +23,26 @@
 
 	const { registerNode } = getContext("nodeRegistry");
 	let activeView = $state("risk");
+	let visible = $state(false);
 	let el;
-	onMount(() => registerNode(nodeId, el));
+	onMount(() => {
+		registerNode(nodeId, el);
+		if (typeof IntersectionObserver === "undefined") {
+			visible = true;
+			return;
+		}
+		const observer = new IntersectionObserver(([entry]) => {
+			if (entry.isIntersecting) {
+				visible = true;
+				observer.disconnect();
+			}
+		}, { threshold: 0.12 });
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
 </script>
 
-<section id={nodeId} class="night-security" bind:this={el}>
+<section id={nodeId} class="night-security" class:visible bind:this={el}>
 	<div class="security-intro-card">
 	<header>
 		<p class="eyebrow">{eyebrow}</p>
@@ -41,8 +56,8 @@
 			<h4>两类基层节点，撑起夜间求助与巡逻网络</h4>
 		</div>
 		<div class="network-bars">
-			{#each cityMetrics as item}
-				<div class="network-row" style={`--fill:${item.percent}%`}>
+			{#each cityMetrics as item, index}
+				<div class="network-row" style={`--fill:${item.percent}%; --bar-delay:${160 + index * 130}ms`}>
 					<div class="metric-label"><b>{item.label}</b><span>{item.detail}</span></div>
 					<div class="bar-rail"><i></i></div>
 					<strong>{item.value}<small>{item.unit}</small></strong>
@@ -152,8 +167,8 @@
 		<div class="action-plot" aria-label="2025年北京夏夜巡防清整行动数据">
 			<div class="subhead vertical"><span>十波次夏夜清整 / 2025</span><h4>一次专项行动，重点清理了什么</h4></div>
 			<div class="action-bars">
-				{#each actionMetrics as item}
-					<div class="action-row" style={`--fill:${item.percent}%`}>
+				{#each actionMetrics as item, index}
+					<div class="action-row" style={`--fill:${item.percent}%; --bar-delay:${index * 110}ms`}>
 						<div><b>{item.label}</b><strong>{item.value}</strong></div>
 						<div class="action-rail"><i></i></div>
 					</div>
@@ -166,8 +181,8 @@
 			<div class="subhead vertical"><span>同期公开结果 / 2026</span><h4>警情变化，用同一条百分比刻度呈现</h4></div>
 			<div class="trend-axis"><span>0%</span><span>-10%</span><span>-20%</span><span>-30%</span></div>
 			<div class="trend-bars">
-				{#each outcomes as item}
-					<div class="trend-row" style={`--fill:${(item.magnitude / 35) * 100}%`}>
+				{#each outcomes as item, index}
+					<div class="trend-row" style={`--fill:${(item.magnitude / 35) * 100}%; --bar-delay:${index * 110}ms`}>
 						<div><b>{item.label}</b><span>{item.detail}</span></div>
 						<div class="trend-rail"><i></i></div>
 						<strong>{item.value}</strong>
@@ -199,6 +214,7 @@
 </section>
 
 <style>
+	@property --risk { syntax:"<percentage>"; inherits:true; initial-value:0%; }
 	.night-security {
 		position: relative;
 		z-index: 3;
@@ -235,14 +251,15 @@
 
 	.network-plot { margin-top: 1.35rem; padding: 1rem 0 .82rem; border-block: 1px solid color-mix(in srgb,var(--panel-border) 40%,transparent); }
 	.network-bars { display: grid; gap: .8rem; margin-top: .95rem; }
-	.network-row { display: grid; grid-template-columns: 13rem minmax(0,1fr) 5.2rem; gap: .85rem; align-items: center; }
+	.network-row { display: grid; grid-template-columns: minmax(10.5rem,13rem) minmax(0,1fr) 5.2rem; gap: .85rem; align-items: center; }
 	.metric-label b,.metric-label span { display: block; }
 	.metric-label b { font-size: .84rem; }
 	.metric-label span { margin-top: .18rem; font-size: .72rem; opacity: .65; }
 	.bar-rail { position: relative; height: 1.05rem; overflow: hidden; border-radius: 999px; background: color-mix(in srgb,var(--panel-text) 10%,transparent); }
 	.bar-rail::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg,transparent 0 calc(20% - 1px),color-mix(in srgb,var(--panel-text) 18%,transparent) calc(20% - 1px) 20%); }
-	.bar-rail i { position: relative; z-index: 1; display: block; width: var(--fill); height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--panel-accent),var(--panel-accent-2)); }
-	.network-row>strong { font-family: var(--font-accent); font-size: 1.55rem; line-height: 1; text-align: right; }
+	.bar-rail i { position: relative; z-index: 1; display: block; width: var(--fill); height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--panel-accent),var(--panel-accent-2)); transform:scaleX(0); transform-origin:left center; transition:transform 900ms cubic-bezier(.22,1,.36,1) var(--bar-delay); }
+	.visible .bar-rail i { transform:scaleX(1); }
+	.network-row>strong { justify-self:end; min-width:5.2rem; font-family: var(--font-accent); font-size: 1.55rem; font-variant-numeric:tabular-nums; line-height: 1; text-align: right; }
 	.network-row small,.service-strip small,.route-plot small,.scene-context small { margin-left: .2em; font-family: var(--font-body); font-size: .42em; font-weight: 850; }
 	.network-axis { display: grid; grid-template-columns: 13rem minmax(0,1fr) 5.2rem; gap: .85rem; margin-top: .36rem; font-size: .66rem; opacity: .55; }
 	.network-axis span:nth-child(2) { text-align: center; }
@@ -284,7 +301,8 @@
 	.risk-section { display: grid; grid-template-columns: .72fr 1.28fr; gap: 1.2rem; margin-top: 1.25rem; padding-block: 1.15rem; border-block: 1px solid color-mix(in srgb,var(--panel-border) 36%,transparent); }
 	.risk-chart { padding-right: 1.1rem; border-right: 1px solid color-mix(in srgb,var(--panel-border) 30%,transparent); }
 	.donut-wrap { display: flex; align-items: center; gap: 1.1rem; margin-top: 1rem; }
-	.donut { display: grid; place-items: center; width: 9.3rem; aspect-ratio: 1; flex: 0 0 auto; border-radius: 50%; background: conic-gradient(var(--panel-accent) 0 70%,color-mix(in srgb,var(--panel-accent-2) 52%,transparent) 70% 100%); box-shadow: inset 0 0 0 1px color-mix(in srgb,var(--panel-border) 30%,transparent); }
+	.donut { --risk:0%; display: grid; place-items: center; width: 9.3rem; aspect-ratio: 1; flex: 0 0 auto; border-radius: 50%; background: conic-gradient(var(--panel-accent) 0 var(--risk),color-mix(in srgb,var(--panel-accent-2) 52%,transparent) var(--risk) 100%); box-shadow: inset 0 0 0 1px color-mix(in srgb,var(--panel-border) 30%,transparent); transition:--risk 1050ms cubic-bezier(.22,1,.36,1) 180ms,transform 700ms cubic-bezier(.22,1,.36,1) 180ms; transform:scale(.9); }
+	.visible .donut { --risk:70%; transform:none; }
 	.donut>div { display: grid; place-items: center; width: 70%; aspect-ratio: 1; border-radius: 50%; background: var(--panel-bg); text-align: center; }
 	.donut strong,.donut span { display: block; }
 	.donut strong { font-family: var(--font-accent); font-size: 2rem; line-height: 1; }
@@ -334,16 +352,17 @@
 	.action-row b { font-size: .76rem; }
 	.action-row strong { font-family: var(--font-accent); font-size: 1.05rem; }
 	.action-rail { height: .72rem; margin-top: .34rem; overflow: hidden; border-radius: 999px; background: color-mix(in srgb,var(--panel-text) 10%,transparent); }
-	.action-rail i { display: block; width: var(--fill); min-width: 3px; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--panel-accent),var(--panel-accent-2)); }
+	.action-rail i { display: block; width: var(--fill); min-width: 3px; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--panel-accent),var(--panel-accent-2)); transform-origin:left center; animation:bar-grow 850ms cubic-bezier(.22,1,.36,1) var(--bar-delay) both; }
 	.trend-axis { display: grid; grid-template-columns: repeat(4,1fr); margin-top: 1rem; padding-bottom: .28rem; border-bottom: 1px solid color-mix(in srgb,var(--panel-border) 28%,transparent); font-size: .64rem; opacity: .56; }
 	.trend-axis span:not(:first-child) { text-align: right; }
 	.trend-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .25rem .7rem; align-items: end; }
 	.trend-row>div:first-child b,.trend-row>div:first-child span { display: block; }
 	.trend-row>div:first-child b { font-size: .76rem; line-height: 1.4; }
 	.trend-row>div:first-child span { margin-top: .18rem; font-size: .68rem; opacity: .64; }
-	.trend-row>strong { grid-row: span 2; font-family: var(--font-accent); font-size: 1.18rem; }
+	.trend-row>strong { grid-row: span 2; min-width:4.2rem; font-family: var(--font-accent); font-size: 1.18rem; font-variant-numeric:tabular-nums; text-align:right; }
 	.trend-rail { grid-column: 1 / -1; height: .72rem; overflow: hidden; border-radius: 999px; background: repeating-linear-gradient(90deg,color-mix(in srgb,var(--panel-text) 9%,transparent) 0 calc(28.57% - 1px),color-mix(in srgb,var(--panel-text) 18%,transparent) calc(28.57% - 1px) 28.57%); }
-	.trend-rail i { display: block; width: var(--fill); height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--panel-accent-2),var(--panel-accent)); }
+	.trend-rail i { display: block; width: var(--fill); height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--panel-accent-2),var(--panel-accent)); transform-origin:left center; animation:bar-grow 850ms cubic-bezier(.22,1,.36,1) var(--bar-delay) both; }
+	@keyframes bar-grow { from { transform:scaleX(0); opacity:.35; } to { transform:scaleX(1); opacity:1; } }
 	.chart-note { margin-top: .9rem; padding-top: .7rem; border-top: 1px dashed color-mix(in srgb,var(--panel-border) 32%,transparent); font-size: .68rem; line-height: 1.5; opacity: .68; }
 
 	.service-strip { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 1rem; border-block: 1px solid color-mix(in srgb,var(--panel-border) 36%,transparent); }
@@ -423,5 +442,8 @@
 		.service-strip span { font-size: .76rem; }
 		.takeaway { font-size: .86rem; }
 		.source-details summary,footer { font-size: .74rem; }
+	}
+	@media(prefers-reduced-motion:reduce){
+		.bar-rail i,.action-rail i,.trend-rail i{transform:none;animation:none;transition:none}.donut{--risk:70%;transform:none;transition:none}
 	}
 </style>

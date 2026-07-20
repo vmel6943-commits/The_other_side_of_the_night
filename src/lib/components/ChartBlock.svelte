@@ -1519,7 +1519,7 @@
 
 	.liangma-impact-row {
 		display: grid;
-		grid-template-columns: minmax(6.5rem, 0.85fr) minmax(90px, 1fr) auto;
+		grid-template-columns: 10.25rem minmax(0, 1fr) 7.15rem;
 		gap: 0.55rem;
 		align-items: center;
 		width: 100%;
@@ -1562,12 +1562,14 @@
 	}
 
 	.liangma-impact-row > strong {
-		min-width: 4.35rem;
+		width: 100%;
 		font-family: var(--font-accent);
 		font-size: clamp(1.15rem, 1.8vw, 1.55rem);
 		font-weight: 400;
+		font-variant-numeric: tabular-nums;
 		line-height: 1;
 		text-align: right;
+		white-space: nowrap;
 	}
 
 	.liangma-impact-note {
@@ -5115,7 +5117,10 @@
 	@media (max-width: 560px) {
 		.liangma-space-grid,
 		.liangma-spotlights { grid-template-columns: 1fr; }
-		.liangma-impact-row { grid-template-columns: minmax(6rem, 0.8fr) minmax(72px, 1fr) auto; }
+		.liangma-impact-row { grid-template-columns: minmax(0,1fr) auto; grid-template-rows:auto auto; gap:.28rem .55rem; min-height:0; padding:.42rem 0; }
+		.liangma-impact-row > div { grid-column:1; grid-row:1; }
+		.liangma-impact-row > strong { grid-column:2; grid-row:1; width:auto; font-size:1.1rem; }
+		.liangma-impact-row > i { grid-column:1/-1; grid-row:2; width:100%; }
 
 		.chart-shell {
 			padding: 1rem;
